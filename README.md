@@ -1,5 +1,7 @@
 # LLM Sandbox
-
+<p align="center">
+  <img src="assets/demo.gif" alt="Demo">
+</p>
 A plugin for Unreal Engine that provides a Flask server for LLM-powered code execution directly in the editor.
 
 ## Features
