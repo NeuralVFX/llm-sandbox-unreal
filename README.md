@@ -15,8 +15,8 @@ A plugin for Unreal Engine that provides a Flask server for LLM-powered code exe
 
 1. Copy the `LLMSandbox` folder to your project's `Plugins/` directory
 2. Restart Unreal Engine
-3. Go to **Edit → Plugins** and verify "LLM Sandbox" is enabled
-4. From the **LLM Sandbox** menu, click **Install Dependencies**
+3. Go to `Edit → Plugins` and verify `LLM Sandbox` is enabled
+4. From the `LLM Sandbox Tools` menu, click `Install Dependencies`
 5. Restart Unreal Engine
 
 ### Web Interface
