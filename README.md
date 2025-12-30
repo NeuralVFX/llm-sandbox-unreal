@@ -1,5 +1,3 @@
-🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠🧠
-
 # LLM Sandbox
 
 A plugin for Unreal Engine that provides a Flask server for LLM-powered code execution directly in the editor.
