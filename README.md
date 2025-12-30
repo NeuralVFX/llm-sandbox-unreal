@@ -18,6 +18,10 @@ A plugin for Unreal Engine that provides a Flask server for LLM-powered code exe
 4. From the **LLM Sandbox** menu, click **Install Dependencies**
 5. Restart Unreal Engine
 
+### Web Interface
+
+Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)** to `Web Browser` interface
+
 ## Usage
 
 ### Starting the Server
@@ -27,11 +31,6 @@ From the menu bar:
 
 The server runs at `http://127.0.0.1:8765`
 
-### Web Interface
-
-This plugin is designed to work with the companion web application:
-
-**[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)**
 
 The web app provides:
 - **Notebook Interface** — Jupyter-style cells for writing and executing Python code in Unreal
