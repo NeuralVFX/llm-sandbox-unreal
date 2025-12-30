@@ -1,0 +1,12 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0",
+    "FriendlyName": "LLM Sandbox",
+    "Description": "Flask server for LLM code execution in Unreal",
+    "Category": "Editor",
+    "CreatedBy": "NeuralVFX",
+    "EnabledByDefault": true,
+    "CanContainContent": true,
+    "Modules": []
+}
