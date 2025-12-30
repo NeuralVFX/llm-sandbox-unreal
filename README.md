@@ -22,7 +22,8 @@ A plugin for Unreal Engine that provides a Flask server for LLM-powered code exe
 
 ### Starting the Server
 
-From the menu bar: **LLM Sandbox → Start Server**
+From the menu bar:
+**LLM Sandbox → Start Server**
 
 The server runs at `http://127.0.0.1:8765`
 
