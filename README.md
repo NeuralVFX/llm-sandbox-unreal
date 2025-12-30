@@ -20,7 +20,7 @@ A plugin for Unreal Engine that provides a Flask server for LLM-powered code exe
 
 ### Web Interface
 
-Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)** to `Web Browser` interface
+Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)** to use `Web Browser` interface
 
 ## Usage
 
