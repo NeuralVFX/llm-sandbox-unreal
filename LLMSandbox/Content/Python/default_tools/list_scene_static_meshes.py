@@ -41,47 +41,15 @@ def _vector_to_dict(vec):
     return {"x": float(vec.x), "y": float(vec.y), "z": float(vec.z)}
 
 
-def _transform_to_dict(xform):
-    """
-    Convert an unreal.Transform into a JSON-friendly dict.
-
-    Args:
-        xform (unreal.Transform): Transform to convert.
-
-    Returns:
-        dict: {location:{x,y,z}, rotation:{pitch,yaw,roll}, scale:{x,y,z}}
-    """
+def _transform_to_dict(xform: unreal.Transform):
     t = xform.translation
-    r = xform.rotation.rotator()
+    q = xform.rotation  # unreal.Quat
     s = xform.scale3d
-    return {"location": _vector_to_dict(t), "rotation": _rotator_to_dict(r), "scale": _vector_to_dict(s)}
-
-
-def _get_component_world_transform(component):
-    """
-    Get a component's world transform in a UE5.6-Python-friendly way.
-
-    Prefers SceneComponent.get_world_transform() if available; otherwise falls back to
-    reading relative transform and composing with owner actor transform.
-
-    Args:
-        component (unreal.ActorComponent): Component to query.
-
-    Returns:
-        unreal.Transform
-    """
-    if hasattr(component, "get_world_transform"):
-        return component.get_world_transform()
-
-    owner = component.get_owner()
-    actor_xf = owner.get_actor_transform() if owner else unreal.Transform()
-
-    rel_loc = component.get_editor_property("relative_location")
-    rel_rot = component.get_editor_property("relative_rotation")
-    rel_scl = component.get_editor_property("relative_scale3d")
-
-    rel_xf = unreal.Transform(rel_rot, rel_loc, rel_scl)
-    return rel_xf * actor_xf
+    return {
+        "location": {"x": float(t.x), "y": float(t.y), "z": float(t.z)},
+        "quat": {"x": float(q.x), "y": float(q.y), "z": float(q.z), "w": float(q.w)},
+        "scale": {"x": float(s.x), "y": float(s.y), "z": float(s.z)},
+    }
 
 
 @register_tool
@@ -150,27 +118,6 @@ def get_static_mesh_scene_transforms(actor_name_filter_list=None, include_bluepr
         if int(include_blueprint_static_mesh_components) == 0 and (not actor.is_a(unreal.StaticMeshActor)):
             continue
 
-        comps = actor.get_components_by_class(unreal.StaticMeshComponent)
-        static_mesh_entries = []
-
-        for smc in comps:
-            mesh = _get_static_mesh_from_component(smc)
-            if not mesh:
-                continue
-
-            comp_world_xform = _get_component_world_transform(smc)
-
-            static_mesh_entries.append({
-                "component_name": smc.get_name(),
-                "component_path": smc.get_path_name(),
-                "mesh_name": mesh.get_name(),
-                "mesh_path": mesh.get_path_name(),
-                "component_world": _transform_to_dict(comp_world_xform),
-            })
-
-        if not static_mesh_entries:
-            continue
-
         actor_world_xform = actor.get_actor_transform()
 
         results[actor_path] = {
@@ -179,7 +126,6 @@ def get_static_mesh_scene_transforms(actor_name_filter_list=None, include_bluepr
             "actor_path": str(actor_path),
             "actor_class": str(actor_class),
             "actor_world": _transform_to_dict(actor_world_xform),
-            "static_meshes": static_mesh_entries,
         }
         count += 1
 

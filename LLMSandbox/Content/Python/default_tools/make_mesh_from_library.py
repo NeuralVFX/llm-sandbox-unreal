@@ -77,45 +77,58 @@ def _get_static_mesh_component(actor) -> unreal.StaticMeshComponent:
 # ----------------------------
 # Tool
 # ----------------------------
+
+
 @register_tool
 def spawn_static_mesh_from_library(
     asset_object_path: str,
     loc_x=0.0, loc_y=0.0, loc_z=0.0,
-    rot_pitch=0.0, rot_yaw=0.0, rot_roll=0.0,
+    quat_x=0.0, quat_y=0.0, quat_z=0.0, quat_w=1.0,
     scl_x=1.0, scl_y=1.0, scl_z=1.0,
-    actor_label: str = "SpawnedStaticMesh"
+    actor_label: str = "SpawnedStaticMesh",
 ):
     """
-    Spawn a StaticMeshActor in the current editor level from a StaticMesh asset in the Content Browser,
-    using numeric inputs (int/float) or numeric strings for transform fields.
+    Spawn a StaticMeshActor in the current editor level from a StaticMesh asset path,
+    using world-space Location + Quaternion + Scale.
+
+    Accepts numeric (int/float) or numeric strings for transform fields.
+
+    Rotation is provided as a quaternion (x,y,z,w) to avoid Euler/Rotator ambiguity.
     """
-    # Load mesh (minimal, direct)
     obj_path = _normalize_mesh_object_path(asset_object_path)
     mesh = unreal.EditorAssetLibrary.load_asset(obj_path)
     if not mesh or not isinstance(mesh, unreal.StaticMesh):
         return None
 
-    # Spawn actor using the same simple API style as your unit test
     loc = unreal.Vector(_num(loc_x, "loc_x"), _num(loc_y, "loc_y"), _num(loc_z, "loc_z"))
-    rot = unreal.Rotator(_num(rot_pitch, "rot_pitch"), _num(rot_yaw, "rot_yaw"), _num(rot_roll, "rot_roll"))
+    scl = unreal.Vector(_num(scl_x, "scl_x"), _num(scl_y, "scl_y"), _num(scl_z, "scl_z"))
 
-    actor = unreal.EditorLevelLibrary.spawn_actor_from_class(unreal.StaticMeshActor, loc, rot)
+    quat = unreal.Quat(
+        _num(quat_x, "quat_x"),
+        _num(quat_y, "quat_y"),
+        _num(quat_z, "quat_z"),
+        _num(quat_w, "quat_w"),
+    )
+
+    actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
+        unreal.StaticMeshActor,
+        loc,
+        unreal.Rotator(0.0, 0.0, 0.0),
+    )
     if not actor:
         return None
 
-    # Set label (optional)
     if actor_label is not None and str(actor_label).strip():
         actor.set_actor_label(str(actor_label))
 
-    # Assign mesh
     smc = _get_static_mesh_component(actor)
     if not smc:
         unreal.EditorLevelLibrary.destroy_actor(actor)
         return None
-
     smc.set_editor_property("static_mesh", mesh)
 
-    # Apply scale (keep consistent with editor scripting patterns)
-    actor.set_actor_scale3d(unreal.Vector(_num(scl_x, "scl_x"), _num(scl_y, "scl_y"), _num(scl_z, "scl_z")))
+    # IMPORTANT FIX: Transform(Location, Rotation, Scale)
+    xf = unreal.Transform(loc, quat.rotator(), scl)
+    actor.set_actor_transform(xf, False, True)
 
     return actor
