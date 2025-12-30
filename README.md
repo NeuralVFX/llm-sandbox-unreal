@@ -27,10 +27,12 @@ Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)*
 ### Starting the Server
 
 From the menu bar:
-**LLM Sandbox → Start Server**
-
-The server runs at `http://127.0.0.1:8765`
-
+`LLM Sandbox → Start Server`
+- The server runs at `http://127.0.0.1:8765`
+  
+### Starting the Web Iterface
+- Start `unreal-llm-sandbox` from command line
+- Open `http://localhost:5001/notebook/notebook.ipynb` ( or any `ipynb` name )
 
 The web app provides:
 - **Notebook Interface** — Jupyter-style cells for writing and executing Python code in Unreal
