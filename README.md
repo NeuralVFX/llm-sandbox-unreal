@@ -6,11 +6,10 @@ A plugin for Unreal Engine that provides a Flask server for LLM-powered code exe
 
 ## Features
 
-- **Flask API Server** — Execute Python code and tools via HTTP endpoints
-- **IPython Integration** — Full interactive shell with history and rich tracebacks
-- **Tool System** — Register custom tools that LLMs can discover and call
-- **Main Thread Execution** — All Unreal API calls run safely on the main thread
-- **Hot-Reloadable Tools** — Add tools to your project without modifying the plugin
+- **Code Execution** - All Code is executed directly in Unreal Engine
+- **LLM Execution** — Ask an LLM for help, with your code/errros in context
+- **Agentic Tool Use** - LLM can use tools directly in Unreal Engine
+- **User Tools** — Build and register custom agentic tools
 
 ## Installation
 
@@ -32,13 +31,13 @@ From the menu bar:
 `LLM Sandbox → Start Server`
 - The server runs at `http://127.0.0.1:8765`
   
-### Starting the Web Iterface
+### Starting the Web Interface
 - Start `unreal-llm-sandbox` from command line ( outside of Unreal )
 - Open `http://localhost:5001/notebook/notebook.ipynb` ( or any `ipynb` name )
 
 The web app provides:
 - **Notebook Interface** — Jupyter-style interface
-- `Code Cells` - Wrie and executing Python code in Unreal
+- `Code Cells` - Write and executing Python code in Unreal
 - `Markdown Cells` - Write notes in Markdown
 - `LLM Prompt Cells` — Chat with LLMs that have full context of your notebook + agentic control of Unreal
 - `Agent Cells` — Agentic code generation with automatic unit testing and iteration
