@@ -1,4 +1,4 @@
-# LLM Sandbox
+# Unreal LLM Sandbox
 <p align="center">
   <img src="assets/demo.gif" alt="Demo">
 </p>
