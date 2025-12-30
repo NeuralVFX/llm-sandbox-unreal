@@ -35,10 +35,11 @@ From the menu bar:
 - Open `http://localhost:5001/notebook/notebook.ipynb` ( or any `ipynb` name )
 
 The web app provides:
-- **Notebook Interface** — Jupyter-style cells for writing and executing Python code in Unreal
-- **LLM Prompt Cells** — Chat with LLMs that have full context of your notebook + agentic control of Unreal
-- **Agent Cells** — Agentic code generation with automatic unit testing and iteration
-- **Live Streaming** — Real-time output from code execution and LLM responses
+- **Notebook Interface** — Jupyter-style interface
+- `Code Cells` - Wrie and executing Python code in Unreal
+- `Markdown Cells` - Write notes in Markdown
+- `LLM Prompt Cells` — Chat with LLMs that have full context of your notebook + agentic control of Unreal
+- `Agent Cells` — Agentic code generation with automatic unit testing and iteration
 
 ### Registering Custom Agent Tools
 
