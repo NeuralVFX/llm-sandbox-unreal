@@ -66,7 +66,7 @@ Tools are automatically discovered by LLM, and may be used via a `Prompt Cell`
 
 ## Requirements
 
-- Unreal Engine 5.4+
+- Unreal Engine 5.6
 - Python 3.11+ (bundled with UE)
 
 ## License
