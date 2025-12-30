@@ -31,7 +31,7 @@ From the menu bar:
 - The server runs at `http://127.0.0.1:8765`
   
 ### Starting the Web Iterface
-- Start `unreal-llm-sandbox` from command line
+- Start `unreal-llm-sandbox` from command line ( outside of Unreal )
 - Open `http://localhost:5001/notebook/notebook.ipynb` ( or any `ipynb` name )
 
 The web app provides:
