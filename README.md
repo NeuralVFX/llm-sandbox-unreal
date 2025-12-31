@@ -36,7 +36,7 @@ From the menu bar:
 - Open `http://localhost:5001/notebook/notebook.ipynb` ( or any `ipynb` name )
 
 The web app provides:
-- **Notebook Interface** — Jupyter-style interface
+- **Notebook Interface** - Jupyter-style interface
 - `Code Cells` - Write and executing Python code in Unreal
 - `Markdown Cells` - Write notes in Markdown
 - `LLM Prompt Cells` - Chat with LLMs that have full context of your notebook + agentic control of Unreal
