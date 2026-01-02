@@ -1,78 +1,11 @@
+from __future__ import annotations
+
 import unreal
-
-# ----------------------------
-# Small helpers (simple + UE-friendly)
-# ----------------------------
-def _normalize_mesh_object_path(asset_object_path: str) -> str:
-    """
-    Accepts:
-      "/Game/Path/SM_Thing.SM_Thing"
-      "/Game/Path/SM_Thing"  -> normalized to "/Game/Path/SM_Thing.SM_Thing"
-    """
-    if not isinstance(asset_object_path, str):
-        raise TypeError("asset_object_path must be a string")
-
-    s = asset_object_path.strip()
-    if not s:
-        raise ValueError("asset_object_path is empty")
-
-    if "." not in s:
-        name = s.rsplit("/", 1)[-1]
-        s = f"{s}.{name}"
-    return s
-
-
-def _num(v, name: str) -> float:
-    """Accept int/float or numeric strings; return float."""
-    if isinstance(v, (int, float)):
-        return float(v)
-    if isinstance(v, str):
-        vs = v.strip()
-        if vs == "":
-            raise ValueError(f"{name} is empty string")
-        return float(vs)
-    raise TypeError(f"{name} must be int/float or numeric string, got {type(v)}")
-
-
-def _get_static_mesh_from_component(static_mesh_component):
-    """Same pattern as your other cell: ask the component for its editor property."""
-    if not static_mesh_component:
-        return None
-    return static_mesh_component.get_editor_property("static_mesh")
-
-def _get_static_mesh_component(actor) -> unreal.StaticMeshComponent:
-    """
-    UE Python can be inconsistent about exposing `is_a()` on wrapped actor instances.
-    So we avoid it and use a property-first approach (like your unit test code).
-    """
-    if not actor:
-        return None
-
-    # For StaticMeshActor this property exists and is the most reliable
-    try:
-        smc = actor.get_editor_property("static_mesh_component")
-        if smc:
-            return smc
-    except Exception:
-        pass
-
-    # Fallback: find any StaticMeshComponent on the actor
-    try:
-        comps = actor.get_components_by_class(unreal.StaticMeshComponent)
-        if comps:
-            return comps[0]
-    except Exception:
-        pass
-
-    # Fallback: root component if it happens to be a StaticMeshComponent
-    try:
-        root = actor.get_editor_property("root_component")
-        if isinstance(root, unreal.StaticMeshComponent):
-            return root
-    except Exception:
-        pass
-
-    return None
+from typing import List, Dict
+from typing import TypedDict, List, Tuple, Literal, NotRequired
+from typing import Annotated, List, Dict, Any
+from pydantic import BaseModel, Field
+import numpy as np
 
 # ----------------------------
 # Tool
@@ -80,55 +13,230 @@ def _get_static_mesh_component(actor) -> unreal.StaticMeshComponent:
 
 
 @register_tool
-def spawn_static_mesh_from_library(
-    asset_object_path: str,
-    loc_x=0.0, loc_y=0.0, loc_z=0.0,
-    quat_x=0.0, quat_y=0.0, quat_z=0.0, quat_w=1.0,
-    scl_x=1.0, scl_y=1.0, scl_z=1.0,
-    actor_label: str = "SpawnedStaticMesh",
-):
+@refine_schema("actor_transforms", item_schema={
+    "asset_path": {"type": "string"},
+    "location": VECTOR3,
+    "quaternion": VECTOR4,
+    "scale": VECTOR3,
+})
+def spawn_actors(
+    actor_transforms: list,
+    base_name: str,
+) -> List[str]:
     """
-    Spawn a StaticMeshActor in the current editor level from a StaticMesh asset path,
-    using world-space Location + Quaternion + Scale.
+    Spawns multiple actors in a single execution using Quaternion rotation.
+    
+    Args:
+        class_or_asset_path: Full asset path to spawn.
+        transforms: List of dicts with:
+         {
+          'asset_path': library_asset_path,
+            'location': [x,y,z], 
+            'quaternion': [x,y,z,w],
+            'scale': [x,y,z]
+            }
+        base_name: Prefix for the actor labels.
 
-    Accepts numeric (int/float) or numeric strings for transform fields.
 
-    Rotation is provided as a quaternion (x,y,z,w) to avoid Euler/Rotator ambiguity.
+    Returns:
+            List[str]: A list of the full path names for every successfully spawned actor.
+            Example: ["PersistentLevel.BatchActor_0", "PersistentLevel.BatchActor_1"]
     """
-    obj_path = _normalize_mesh_object_path(asset_object_path)
-    mesh = unreal.EditorAssetLibrary.load_asset(obj_path)
-    if not mesh or not isinstance(mesh, unreal.StaticMesh):
-        return None
 
-    loc = unreal.Vector(_num(loc_x, "loc_x"), _num(loc_y, "loc_y"), _num(loc_z, "loc_z"))
-    scl = unreal.Vector(_num(scl_x, "scl_x"), _num(scl_y, "scl_y"), _num(scl_z, "scl_z"))
+    spawned_paths = []
+    for i, xf in enumerate(actor_transforms):
 
-    quat = unreal.Quat(
-        _num(quat_x, "quat_x"),
-        _num(quat_y, "quat_y"),
-        _num(quat_z, "quat_z"),
-        _num(quat_w, "quat_w"),
+        class_or_asset_path= xf.get('asset_path')
+
+        # 1. Try to load as a Class first (for Lights/Cameras)
+        spawn_obj = unreal.load_class(None, class_or_asset_path)
+        
+        # 2. If not a class, try to load as an Asset (for Meshes)
+        if not spawn_obj:
+            spawn_obj = unreal.EditorAssetLibrary.load_asset(class_or_asset_path)
+
+        if not spawn_obj:
+            unreal.log_error(f"Could not find Class or Asset at: {class_or_asset_path}")
+            continue
+
+        loc = unreal.Vector(*xf.get('location', [0,0,0]))
+        quat = unreal.Quat(*xf.get('quaternion', [0,0,0,1]))
+        scale = unreal.Vector(*xf.get('scale', [1,1,1]))
+
+        # This API handles both Classes and Assets correctly
+        actor = unreal.EditorLevelLibrary.spawn_actor_from_object(spawn_obj, loc, quat.rotator())
+        
+        if actor:
+            actor.set_actor_label(f"{base_name}_{i}")
+            actor.set_actor_scale3d(scale)
+            spawned_paths.append(actor.get_path_name())
+            
+    return spawned_paths
+
+
+    
+@register_tool
+@refine_schema("actor_transform_updates", item_schema={
+    "actor_path": {"type": "string"},
+    "location": VECTOR3,
+    "quaternion": VECTOR4,
+    "scale": VECTOR3
+})
+def update_actors_transforms(
+    actor_transform_updates: list
+) -> List[str]:
+    """
+    Updates the location, rotation, and scale of multiple existing actors in one batch.
+    
+    This is the most efficient way to move groups of objects or align them to patterns.
+
+        [
+        {
+            "actor_path": "PersistentLevel.Chair_2",
+            "location": [100.0, 0.0, 50.0],
+            "quat": [0.0, 0.0, 0.0, 1.0],
+            "scale": [1.0, 1.0, 1.0]
+        },
+        {
+            "actor_path": "PersistentLevel.Table_5",
+            "location": [200.0, 10.0, 55.0],
+            "quat": [0.0, 0.707, 0.0, 0.707],
+            "scale": [1.2, 1.2, 1.2]
+        }
+        ]
+
+    Args:
+        updates: A list of dictionaries. Each MUST contain 'actor_path' (str), 
+                 'location' [x,y,z], 'quat' [x,y,z,w], and 'scale' [x,y,z].
+
+    Returns:
+        Dict: Return Status, and  list of actor paths that were successfully updated.
+    """
+
+    #out_dict = {'return_status':"Failure: You must fill 'updates' param ie:\n "+UPDATES_EX ,'updated_paths':[]}
+    updated_paths = []
+    for i, xf in enumerate(actor_transform_updates):
+        try:
+            # 1. Resolve the Actor
+            path = xf.get('actor_path', "")
+            actor = unreal.find_object(None, path)
+            
+            if not actor:
+                unreal.log_warning(f"Batch Update: Could not find actor at {path}")
+                continue
+
+            # 2. Extract and cast data
+            l_vals = xf.get('location', [0.0, 0.0, 0.0])
+            q_vals = xf.get('quaternion', [0.0, 0.0, 0.0, 1.0])
+            s_vals = xf.get('scale', [1.0, 1.0, 1.0])
+
+            loc = unreal.Vector(float(l_vals[0]), float(l_vals[1]), float(l_vals[2]))
+            quat = unreal.Quat(float(q_vals[0]), float(q_vals[1]), float(q_vals[2]), float(q_vals[3]))
+            scale = unreal.Vector(float(s_vals[0]), float(s_vals[1]), float(s_vals[2]))
+            
+            # 3. Apply Transform
+            # Using set_actor_transform is cleaner for batching all three properties at once
+            new_transform = unreal.Transform(loc, quat.rotator(), scale)
+            actor.set_actor_transform(new_transform, False, True)
+            
+            updated_paths.append(path)
+                
+        except Exception as e:
+            unreal.log_error(f"Failed to update batch item {i}: {str(e)}")
+            continue
+            
+    return updated_paths
+
+from typing import List, Dict
+
+
+@register_tool
+def space_apart_intersecting_actors(
+    actor_paths: List[str],
+
+) -> str:
+    """
+    Spaces out overlapping actors using a physics-like relaxation solver.
+    Returns statistics on how much overlap was removed.
+    
+    Args:
+        actor_paths: List of full actor paths.
+    """
+    iterations = 50
+    learning_rate = 0.5
+
+    # 1. Resolve Paths to Actor Objects
+    actors = []
+    for path in actor_paths:
+        actor = unreal.find_object(None, path)
+        if actor:
+            actors.append(actor)
+            
+    count = len(actors)
+    if count < 2: 
+        return "Skipped: Need at least 2 valid actors."
+
+    # --- 2. PREPARE DATA ---
+    positions = []
+    radii = []
+    
+    for a in actors:
+        pos = a.get_actor_location()
+        positions.append([pos.x, pos.y, pos.z])
+        
+        origin, extent = a.get_actor_bounds(False) 
+        avg_radius = (extent.x + extent.y + extent.z) / 3.0
+        radii.append(avg_radius)
+
+    P = np.array(positions)
+    R = np.array(radii).reshape(-1, 1)
+
+    # Helper to calculate max overlap for reporting
+    def get_max_overlap(Pos, Rad):
+        diff = Pos[:, np.newaxis, :] - Pos[np.newaxis, :, :]
+        dist = np.linalg.norm(diff, axis=2)
+        np.fill_diagonal(dist, np.inf)
+        overlap = (Rad + Rad.T) - dist
+        return np.max(np.maximum(overlap, 0))
+
+    # Calculate Starting Stats
+    start_overlap = get_max_overlap(P, R)
+    unreal.log(f"Starting Relaxation. Max Overlap: {start_overlap:.2f}")
+
+    # --- 3. OPTIMIZATION LOOP ---
+    final_overlap = start_overlap
+    
+    for i in range(iterations):
+        # Diff vectors
+        diff_matrix = P[:, np.newaxis, :] - P[np.newaxis, :, :]
+        dist_matrix = np.linalg.norm(diff_matrix, axis=2)
+        np.fill_diagonal(dist_matrix, np.inf)
+
+        # Overlap
+        req_dist_matrix = R + R.T
+        overlap = req_dist_matrix - dist_matrix
+        overlap = np.maximum(overlap, 0)
+        
+        final_overlap = np.max(overlap)
+        if final_overlap < 0.1:
+            break
+            
+        # Gradient
+        directions = diff_matrix / (dist_matrix[:, :, np.newaxis] + 1e-6)
+        forces = directions * overlap[:, :, np.newaxis]
+        total_forces = np.sum(forces, axis=1)
+        
+        P += total_forces * learning_rate
+
+    # --- 4. APPLY & REPORT ---
+    with unreal.ScopedEditorTransaction("Spacing Relaxation"):
+        for i, actor in enumerate(actors):
+            new_loc = unreal.Vector(P[i][0], P[i][1], P[i][2])
+            actor.set_actor_location(new_loc, False, True)
+    
+    result_msg = (
+        f"Relaxed {count} actors in {i+1} steps. "
+        f"Overlap reduced from {start_overlap:.2f} to {final_overlap:.2f}."
     )
-
-    actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
-        unreal.StaticMeshActor,
-        loc,
-        unreal.Rotator(0.0, 0.0, 0.0),
-    )
-    if not actor:
-        return None
-
-    if actor_label is not None and str(actor_label).strip():
-        actor.set_actor_label(str(actor_label))
-
-    smc = _get_static_mesh_component(actor)
-    if not smc:
-        unreal.EditorLevelLibrary.destroy_actor(actor)
-        return None
-    smc.set_editor_property("static_mesh", mesh)
-
-    # IMPORTANT FIX: Transform(Location, Rotation, Scale)
-    xf = unreal.Transform(loc, quat.rotator(), scl)
-    actor.set_actor_transform(xf, False, True)
-
-    return actor
+    unreal.log(result_msg)
+    return result_msg

@@ -15,6 +15,7 @@ from werkzeug.serving import make_server
 import importlib
 import os
 
+from tool_schema import *
 
 try:
     import unreal
@@ -39,6 +40,7 @@ def custom_showtraceback(exc_tuple=None, filename=None, tb_offset=None, exceptio
     pass  # Do nothing - we're handling tracebacks ourselves
 
 
+
 ####################################
 # TOOL REGISTRY (dynamic)
 ####################################
@@ -48,18 +50,85 @@ TOOL_SCHEMAS = []
 execution_queue = Queue()
 
 
-def register_tool(func):
-    """Register a function as a tool."""
-    TOOLS[func.__name__] = func
-    schema = lite_mk_func(func)
+def register_tool(func_or_wrapper):
+    """
+    Register a function (or ToolSchema wrapper) as a tool.
+    Supports both auto-generated schemas and custom pre-defined schemas.
+    """
+    # 1. Determine if this is a custom wrapper or a raw function
+    if hasattr(func_or_wrapper, 'schema'):
+        # CASE A: Custom Schema (The wrapper 'knows' its own schema)
+        schema = func_or_wrapper.schema
+        # Ensure we use the wrapper name (proxied from original func)
+        name = func_or_wrapper.__name__
+        func_to_store = func_or_wrapper
+        unreal.log(f"Registering Custom Tool: {name}")
+    else:
+        # CASE B: Raw Function (Auto-generate schema)
+        name = func_or_wrapper.__name__
+        schema = lite_mk_func(func_or_wrapper)
+        func_to_store = func_or_wrapper
+        unreal.log(f"Registering Simple Tool: {name}")
+
+    # 2. Store the implementation
+    TOOLS[name] = func_to_store
+    shell.user_ns[name] = func_to_store
+
+    # 3. Register the Schema
     # Remove old schema if exists
-    TOOL_SCHEMAS[:] = [s for s in TOOL_SCHEMAS if s['function']['name'] != func.__name__]
+    TOOL_SCHEMAS[:] = [s for s in TOOL_SCHEMAS if s['function']['name'] != name]
     TOOL_SCHEMAS.append(schema)
     
-    shell.user_ns[func.__name__] = func
-    unreal.log(f"Registered tool: {func.__name__}")
-    return func
+    return func_or_wrapper
 
+
+####################################
+# Register Default Tools / Find User Added Tools
+####################################
+
+def load_tools(tools_dir):
+    os.makedirs(tools_dir, exist_ok=True)
+    
+    for f in glob.glob(os.path.join(tools_dir, "*.py")):
+        filename = os.path.basename(f)
+        module_name = filename[:-3]  # Strip .py extension to get a clean module name
+        
+        # SKIP definitions files or __init__
+        if filename.startswith("_") or filename.startswith("__"): 
+            continue
+
+        # --- RELOAD LOGIC ---
+        # Check if we've seen this module before
+        if module_name in sys.modules:
+            # Force remove it from cache so we get a fresh execution
+            del sys.modules[module_name]
+            unreal.log(f"Reloading existing module: {module_name}")
+
+        try:
+            # Create spec and module
+            spec = importlib.util.spec_from_file_location(module_name, f)
+            mod = importlib.util.module_from_spec(spec)
+            
+            # Register it in sys.modules manually (important for relative imports inside tools)
+            sys.modules[module_name] = mod
+            
+            # --- INJECT DEPENDENCIES ---
+            mod.register_tool = register_tool
+            mod.shell = shell
+            mod.refine_schema = refine_schema
+            mod.ToolSchema = ToolSchema
+            mod.VECTOR3 = VECTOR3
+            mod.VECTOR4 = VECTOR4
+
+            # Execute
+            spec.loader.exec_module(mod)
+            unreal.log(f"Successfully loaded: {filename}")
+            
+        except Exception as e:
+            unreal.log_error(f"Failed to load {filename}: {e}")
+            # Clean up broken module so next reload tries again
+            if module_name in sys.modules:
+                del sys.modules[module_name]
 
 shell.user_ns['register_tool'] = register_tool
 
@@ -255,18 +324,6 @@ def execute_sync():
     return flask.jsonify({'messages': messages})
 
 
-####################################
-# Register Default Tools / Find User Added Tools
-####################################
-
-def load_tools(tools_dir):
-    os.makedirs(tools_dir, exist_ok=True)
-    for f in glob.glob(os.path.join(tools_dir, "*.py")):
-        spec = importlib.util.spec_from_file_location("", f)
-        mod = importlib.util.module_from_spec(spec)
-        mod.register_tool = register_tool
-        mod.shell = shell
-        spec.loader.exec_module(mod)
 
 load_tools(os.path.join(os.path.dirname(__file__), "default_tools"))  # Plugin tools
 load_tools(os.path.join(unreal.Paths.project_content_dir(), "Python", "tools"))  # User tools
@@ -308,7 +365,6 @@ def register_callback():
         unreal.log(f'Failed to Start: LLM Sandbox {e}')
     
     try:
-        load_tools()
         unreal.log('Loaded: LLM Sandbox User Agent Tools')
 
     except Exception as e:

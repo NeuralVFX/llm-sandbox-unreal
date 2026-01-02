@@ -1,4 +1,6 @@
 import unreal
+import copy
+from typing import List, Dict, Any, Optional
 
 
 @register_tool
@@ -10,7 +12,7 @@ def get_actor_count():
 
 
 @register_tool
-def list_actors(limit: int = 5):
+def list_actor_names(limit: int = 5):
     """List actor names in the current Unreal level."""
     world = unreal.EditorLevelLibrary.get_editor_world()
     actors = unreal.GameplayStatics.get_all_actors_of_class(world, unreal.Actor)
