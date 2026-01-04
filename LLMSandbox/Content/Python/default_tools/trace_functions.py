@@ -384,16 +384,22 @@ def ray_cast_array(
 
 @register_tool
 def move_actor_until_hit(
-    actor_paths: List[str] = [],
+    actor_paths: List[str],
+    selected_only: bool = False, 
     distance: float = 10000,
     buffer_distance: float = 5000.0,
     direction: List[float] = [0, 0, -1],
-    set_rotation: bool = True,  # NEW: optionally apply the computed quaternion
+    set_rotation: bool = True, 
 ) -> List[dict]:
     """
-    Cast a ray for each input actor (from the actor's current location) and, on hit,
-    move that actor so its location becomes the hit point. Optionally rotate the actor
-    so its local +Z aligns to the hit normal. ( Great for placing object on uneven terrain )
+    Drop actors onto surfaces below (or in any direction).
+    
+    USE THIS WHEN:
+    - User says "drop to floor", "place on ground", "snap to surface"
+    - Aligning objects to terrain or other geometry
+    - User wants objects to "sit" on something naturally
+    
+    Optionally rotates actor to match surface normal (good for organic placement).
 
     Args:
         actor_paths:
@@ -435,13 +441,9 @@ def move_actor_until_hit(
         return []
 
     # Resolve ignore actors
-    ignore_actors = []
-    for p in (actor_paths or []):
-        a = unreal.find_object(None, p)
-        if a and isinstance(a, unreal.Actor):
-            ignore_actors.append(a)
+    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
 
-    ignore_actors = _sanitize_ignore_actors(ignore_actors)
+    ignore_actors = _sanitize_ignore_actors(actors)
 
     draw_type = unreal.DrawDebugTrace.FOR_DURATION if draw_debug else unreal.DrawDebugTrace.NONE
 
@@ -450,10 +452,11 @@ def move_actor_until_hit(
 
     moved = []
 
-    for path in (actor_paths or []):
-        actor = unreal.find_object(None, path)
-        if not actor or not isinstance(actor, unreal.Actor):
+
+    for actor in actors: 
+        if not actor:
             continue
+            
 
         start = actor.get_actor_location() - (dirn*buffer_distance)
         end = start + (dirn * float(distance))
@@ -584,13 +587,19 @@ def _transform_to_dict(xform: unreal.Transform) -> dict:
 ################################
 
 @register_tool
-def look_at_scene_geoometry(
+def look_at_scene_geometry(
    # forwards to ray_cast_array by temporarily toggling inside it? (see note below)
 ) -> List[Dict[str, Any]]:
     """
-    Shoots a grid of rays from the current Editor viewport camera through a 90deg frustum
-    (configurable), laid out in NDC space as a WxH grid.
-    *Intersects Actual Gemoetry - Detects Actual Geomtric Shape of Scene*
+    Shoots a grid of rays from the Editor camera to detect scene geometry.
+    
+    USE THIS WHEN:
+    - User asks "what's in front of me" or "what can I see"
+    - Need to understand the 3D layout/depth of a scene
+    - Detecting surfaces, floors, walls from camera perspective
+    - Finding empty space vs occupied space in view
+    
+    NOT FOR: Finding specific actors by name/type (use find_actors instead) Actual Gemoetry - Detects Actual Geomtric Shape of Scene*
 
     Returns per-sample results similar to ray_cast_array, and also includes:
       - ndc_xy : [x,y] in [-1..1]
@@ -599,9 +608,6 @@ def look_at_scene_geoometry(
       - distance_from_camera_cm : float
       - deg_from_view_center    : float (0 at center ray)
 
-    Notes:
-      - Uses ray_cast_array under the hood (one call per ray so direction can vary).
-      - NDC mapping uses cell centers: x=(i+0.5)/w, y=(j+0.5)/h.
     """
     grid_w = 10
     grid_h = 10
@@ -689,11 +695,15 @@ def look_at_scene_geoometry(
 @register_tool
 def view_actors_screenspace( actor_paths: List[str],max_results: int = 5000) -> List[Dict[str, Any]]:
     """
-    Returns screen-space positions (NDC) for Actors visible in the current Editor viewport.
-
-    - Visibility is tested using each Actor's world-space bounds (`Actor.get_actor_bounds`).
-    - Output is LLM/JSON-friendly: actor paths + simple numeric lists.
-    *Detects Object Positions in ScreenSpace ( NOT Geometry )*
+    Get screen-space positions (NDC) for actors visible in the Editor viewport.
+    
+    USE THIS WHEN:
+    - User references objects by screen position ("the thing on the left")
+    - Need to know which actors are currently visible to the user
+    - Sorting/filtering actors by what the user can see
+    - Understanding spatial relationships from user's viewpoint
+    
+    NOT FOR: Detecting geometry shape (use look_at_scene_geometry instead)
 
     Args:
         actor_paths: List of full actor object paths (from `actor.get_path_name()`).
@@ -796,15 +806,19 @@ def view_actors_screenspace( actor_paths: List[str],max_results: int = 5000) -> 
 @register_tool
 def get_actor_transforms(
     selected_only: bool,
-    actor_paths: list[str] = [],
+    actor_paths: list[str],
 
 ) -> dict:
     """
-    Retrieves world-space transform data for actors with Static Mesh Components.
+    Get world transforms and mesh info for actors.
     
-    LOGIC HIERARCHY:
-    1. If 'actor_paths' is provided (not empty), the tool ONLY processes those specific actors.
-    2. If 'actor_paths' is empty, the tool searches the level based on 'selected_only'.
+    USE THIS WHEN:
+    - Need precise position/rotation/scale of specific actors
+    - User asks "where is X" or "how big is X"
+    - Preparing data for move/rotate/scale operations
+    - Inspecting what meshes an actor contains
+    
+    Tip: Use selected_only=True when user says "the selected objects"
     
     Args:
         actor_paths: List of full Actor Path Names (e.g., ["PersistentLevel.Chair_2"]). 
@@ -843,8 +857,7 @@ def get_actor_transforms(
     C = _v3_to_np(cam_loc)
     F, R, U = _camera_basis_np(cam_rot)
 
-    _resolve_actor_paths_or_selected(actor_paths, selected_only)
-
+    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
     # Get the current selection set to compare against for 'is_selected'
     current_selection = unreal.EditorLevelLibrary.get_selected_level_actors()
     selection_paths = {a.get_path_name() for a in current_selection if a}
@@ -900,11 +913,14 @@ def get_actor_transforms(
 @register_tool
 def scatter(actor_paths: List[str],radius: float=200.0):
     """
-    Randomize Actor world positions within a sphere of a given radius.
-
-    This tool offsets each target Actor by a random vector whose direction is uniformly
-    randomized and whose magnitude is randomly chosen in [0, radius]. The result is a
-    “spherical” scatter around the actor’s current location (not a box/grid).
+    Randomize positions of existing actors within a spherical radius.
+    
+    USE THIS WHEN:
+    - User says "scatter", "randomize positions", "spread out"
+    - Making arrangements look more natural/organic
+    - Breaking up grid-like patterns
+    
+    Does NOT duplicate — just moves existing actors. See scatter_replicate for duplication.
 
     Target selection:
       - If `actor_paths` is non-empty: only those actors are affected (paths are resolved
@@ -938,22 +954,38 @@ def scatter(actor_paths: List[str],radius: float=200.0):
           (which is simple and often good enough, but not perfectly uniform-by-volume in
           the sphere. If you need uniform volume density, use r = radius * (u ** (1/3)).)
     """
-    rng=random.Random()
+    rng = random.Random()
+    results = []
+
     for a in (_resolve_actor_paths_or_selected(actor_paths) or []):
 
         d=unreal.Vector(rng.uniform(-1,1),rng.uniform(-1,1),rng.uniform(-1,1)).normal()
         a.set_actor_location(a.get_actor_location() + d*rng.uniform(0.0, radius), False, False)
 
+        results.append({
+            "actor_path": a.get_path_name(),
+            "actor_label": a.get_actor_label(),
+            "new_location": [float(new_loc.x), float(new_loc.y), float(new_loc.z)],
+        })
     
+    return results
+    
+
 @register_tool
 def scatter_replicate(
-    actor_paths: List[str] = [],
+    actor_paths: List[str],
     duplicates_per_actor: int = 5,
     radius: float = 200.0,
 ) -> List[Dict[str, Any]]:
     """
-    Duplicates each target actor N times, then randomizes the *duplicates'* positions
-    within a sphere of `radius` around the original actor.
+    Duplicate actors and scatter the copies around each original.
+    
+    USE THIS WHEN:
+    - User says "scatter copies", "duplicate and spread", "populate area"
+    - Creating clusters of similar objects (trees, rocks, debris)
+    - Filling an area with variations of existing objects
+    
+    Original actors stay in place; only duplicates are randomized.
 
     Selection logic:
       - If actor_paths is non-empty: uses those actors.
@@ -1019,3 +1051,41 @@ def scatter_replicate(
                 })
 
     return results
+
+@register_tool
+def destroy_actors(
+    actor_paths: List[str],
+    selected_only: bool = False,  # <-- ADD
+
+) -> dict:
+    """
+    Permanently deletes multiple actors from the world using their full path names.
+    
+    Args:
+        actor_paths: A list of full path strings (e.g., ["PersistentLevel.Sphere_0"]).
+    
+    Returns:
+        dict: Summary of the operation, including 'success_count' and 'failed_paths'.
+        Example Return:
+        {
+            "success_count": 38,
+            "failed_count": 2,
+            "failed_paths": ["PersistentLevel.Invalid_Actor_99"]
+        }
+    """
+    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
+    
+    success_count = 0
+    failed_paths = []
+    
+    for actor in actors:
+        try:
+            success = unreal.EditorLevelLibrary.destroy_actor(actor)
+            if success:
+                success_count += 1
+            else:
+                failed_paths.append(actor.get_path_name())
+        except Exception as e:
+            failed_paths.append(actor.get_path_name() if actor else "unknown")
+    
+    return {"success_count": success_count, "failed_count": len(failed_paths), "failed_paths": failed_paths}

@@ -43,7 +43,7 @@ def spawn_actors(
             Example: ["PersistentLevel.BatchActor_0", "PersistentLevel.BatchActor_1"]
     """
 
-    spawned_paths = []
+    spawned = []
     for i, xf in enumerate(actor_transforms):
 
         class_or_asset_path= xf.get('asset_path')
@@ -67,11 +67,15 @@ def spawn_actors(
         actor = unreal.EditorLevelLibrary.spawn_actor_from_object(spawn_obj, loc, quat.rotator())
         
         if actor:
-            actor.set_actor_label(f"{base_name}_{i}")
+            label = f"{base_name}_{i}"
+            actor.set_actor_label(label)
             actor.set_actor_scale3d(scale)
-            spawned_paths.append(actor.get_path_name())
+            spawned.append({
+                "actor_path": actor.get_path_name(),
+                "actor_class": actor.get_class().get_name(),
+            })
             
-    return spawned_paths
+    return spawned
 
 
     
@@ -157,10 +161,17 @@ def space_apart_intersecting_actors(
 ) -> str:
     """
     Spaces out overlapping actors using a physics-like relaxation solver.
-    Returns statistics on how much overlap was removed.
+    
+    USE THIS WHEN:
+    - User says "separate these", "they're overlapping", "spread apart"
+    - After scatter/duplication creates intersecting objects
+    - Fixing clipping/z-fighting between nearby actors
     
     Args:
-        actor_paths: List of full actor paths.
+        actor_paths: List of full actor paths to de-overlap.
+        
+    Returns:
+        List[dict]: Each moved actor with actor_path, actor_label, and new_location.
     """
     iterations = 50
     learning_rate = 0.5
@@ -189,6 +200,7 @@ def space_apart_intersecting_actors(
         radii.append(avg_radius)
 
     P = np.array(positions)
+    P += np.random.uniform(-0.1, 0.1, P.shape)  # now this works
     R = np.array(radii).reshape(-1, 1)
 
     # Helper to calculate max overlap for reporting
@@ -207,36 +219,54 @@ def space_apart_intersecting_actors(
     final_overlap = start_overlap
     
     for i in range(iterations):
-        # Diff vectors
+        # Pairwise differences and distances
         diff_matrix = P[:, np.newaxis, :] - P[np.newaxis, :, :]
         dist_matrix = np.linalg.norm(diff_matrix, axis=2)
         np.fill_diagonal(dist_matrix, np.inf)
 
-        # Overlap
+        # Overlap calculation
         req_dist_matrix = R + R.T
-        overlap = req_dist_matrix - dist_matrix
-        overlap = np.maximum(overlap, 0)
+        overlap = np.maximum(req_dist_matrix - dist_matrix, 0)
         
         final_overlap = np.max(overlap)
         if final_overlap < 0.1:
             break
             
-        # Gradient
+        # Compute forces
         directions = diff_matrix / (dist_matrix[:, :, np.newaxis] + 1e-6)
         forces = directions * overlap[:, :, np.newaxis]
         total_forces = np.sum(forces, axis=1)
         
-        P += total_forces * learning_rate
+        # Raw step
+        step = total_forces * learning_rate
+        
+        # HARD CLAMP: magnitude can never exceed 1/5 of object's radius
+        step_magnitude = np.linalg.norm(step, axis=1, keepdims=True)
+        max_allowed = R * 0.1
+        
+        # Normalize direction, then scale to clamped magnitude
+        step_direction = step / (step_magnitude + 1e-9)
+        clamped_magnitude = np.minimum(step_magnitude, max_allowed)
+        step = step_direction * clamped_magnitude
+        
+        P += step
+
+    actors_moved = []
 
     # --- 4. APPLY & REPORT ---
     with unreal.ScopedEditorTransaction("Spacing Relaxation"):
         for i, actor in enumerate(actors):
-            new_loc = unreal.Vector(P[i][0], P[i][1], P[i][2])
-            actor.set_actor_location(new_loc, False, True)
+            new_loc = [float(P[i][0]), float(P[i][1]), float(P[i][2])]
+            
+
+            actor.set_actor_location(unreal.Vector(*new_loc), False, True)
+            
+            actors_moved.append({
+                "actor_path": actor.get_path_name(),
+                "actor_label": actor.get_actor_label(),
+                "new_location": [round(v, 2) for v in new_loc],
+            })
     
-    result_msg = (
-        f"Relaxed {count} actors in {i+1} steps. "
-        f"Overlap reduced from {start_overlap:.2f} to {final_overlap:.2f}."
-    )
-    unreal.log(result_msg)
-    return result_msg
+    
+
+    return actors_moved
