@@ -452,63 +452,64 @@ def move_actor_until_hit(
 
     moved = []
 
+    with unreal.ScopedEditorTransaction("Drop Actors to Surface"): 
 
-    for actor in actors: 
-        if not actor:
-            continue
-            
+        for actor in actors: 
+            if not actor:
+                continue
+                
 
-        start = actor.get_actor_location() - (dirn*buffer_distance)
-        end = start + (dirn * float(distance))
+            start = actor.get_actor_location() - (dirn*buffer_distance)
+            end = start + (dirn * float(distance))
 
-        per_trace_ignore = _sanitize_ignore_actors(ignore_actors + [actor])
+            per_trace_ignore = _sanitize_ignore_actors(ignore_actors + [actor])
 
-        hit = unreal.SystemLibrary.line_trace_single(
-            world,
-            start,
-            end,
-            tquery,
-            bool(trace_complex),
-            per_trace_ignore,
-            draw_type,
-            False,
-            unreal.LinearColor(1.0, 0.0, 0.0, 1.0),
-            unreal.LinearColor(0.0, 1.0, 0.0, 1.0),
-            float(debug_lifetime)
-        )
-
-        if hit is None or not _hitresult_blocking(hit):
-            continue
-
-        loc = _hitresult_location(hit)
-        nrm = _hitresult_normal(hit)
-        if loc is None or nrm is None:
-            continue
-
-        up_hint = actor.get_actor_right_vector()
-        q = _build_quat_from_normal(nrm, up_hint)
-
-        # Apply transform
-        if set_rotation:
-            # Set both location + rotation in one call (more consistent)
-            rot = q.rotator()  # Quat -> Rotator
-            new_xform = unreal.Transform(
-                location=loc,
-                rotation=rot,   # MUST be Rotator in this binding
-                scale=actor.get_actor_scale3d()
+            hit = unreal.SystemLibrary.line_trace_single(
+                world,
+                start,
+                end,
+                tquery,
+                bool(trace_complex),
+                per_trace_ignore,
+                draw_type,
+                False,
+                unreal.LinearColor(1.0, 0.0, 0.0, 1.0),
+                unreal.LinearColor(0.0, 1.0, 0.0, 1.0),
+                float(debug_lifetime)
             )
-            actor.set_actor_transform(new_xform, False, False)
-        else:
-            actor.set_actor_location(loc, False, False)
 
-        moved.append({
-            "actor_path": actor.get_path_name(),
-            "actor_label": actor.get_actor_label(),
-            "transform": {
-                "location": [float(loc.x), float(loc.y), float(loc.z)],
-                "quat": [float(q.x), float(q.y), float(q.z), float(q.w)]
-            }
-        })
+            if hit is None or not _hitresult_blocking(hit):
+                continue
+
+            loc = _hitresult_location(hit)
+            nrm = _hitresult_normal(hit)
+            if loc is None or nrm is None:
+                continue
+
+            up_hint = actor.get_actor_right_vector()
+            q = _build_quat_from_normal(nrm, up_hint)
+
+            # Apply transform
+            if set_rotation:
+                # Set both location + rotation in one call (more consistent)
+                rot = q.rotator()  # Quat -> Rotator
+                new_xform = unreal.Transform(
+                    location=loc,
+                    rotation=rot,   # MUST be Rotator in this binding
+                    scale=actor.get_actor_scale3d()
+                )
+                actor.set_actor_transform(new_xform, False, False)
+            else:
+                actor.set_actor_location(loc, False, False)
+
+            moved.append({
+                "actor_path": actor.get_path_name(),
+                "actor_label": actor.get_actor_label(),
+                "transform": {
+                    "location": [float(loc.x), float(loc.y), float(loc.z)],
+                    "quat": [float(q.x), float(q.y), float(q.z), float(q.w)]
+                }
+            })
 
     return moved
 
@@ -956,18 +957,19 @@ def scatter(actor_paths: List[str],radius: float=200.0):
     """
     rng = random.Random()
     results = []
+    with unreal.ScopedEditorTransaction("Randomize Positions"):
 
-    for a in (_resolve_actor_paths_or_selected(actor_paths) or []):
+        for a in (_resolve_actor_paths_or_selected(actor_paths) or []):
 
-        d=unreal.Vector(rng.uniform(-1,1),rng.uniform(-1,1),rng.uniform(-1,1)).normal()
-        a.set_actor_location(a.get_actor_location() + d*rng.uniform(0.0, radius), False, False)
+            d=unreal.Vector(rng.uniform(-1,1),rng.uniform(-1,1),rng.uniform(-1,1)).normal()
+            a.set_actor_location(a.get_actor_location() + d*rng.uniform(0.0, radius), False, False)
 
-        results.append({
-            "actor_path": a.get_path_name(),
-            "actor_label": a.get_actor_label(),
-            "new_location": [float(new_loc.x), float(new_loc.y), float(new_loc.z)],
-        })
-    
+            results.append({
+                "actor_path": a.get_path_name(),
+                "actor_label": a.get_actor_label(),
+                "new_location": [float(new_loc.x), float(new_loc.y), float(new_loc.z)],
+            })
+        
     return results
     
 
@@ -1077,15 +1079,15 @@ def destroy_actors(
     
     success_count = 0
     failed_paths = []
-    
-    for actor in actors:
-        try:
-            success = unreal.EditorLevelLibrary.destroy_actor(actor)
-            if success:
-                success_count += 1
-            else:
-                failed_paths.append(actor.get_path_name())
-        except Exception as e:
-            failed_paths.append(actor.get_path_name() if actor else "unknown")
-    
+    with unreal.ScopedEditorTransaction("Destroy Actors"): 
+        for actor in actors:
+            try:
+                success = unreal.EditorLevelLibrary.destroy_actor(actor)
+                if success:
+                    success_count += 1
+                else:
+                    failed_paths.append(actor.get_path_name())
+            except Exception as e:
+                failed_paths.append(actor.get_path_name() if actor else "unknown")
+        
     return {"success_count": success_count, "failed_count": len(failed_paths), "failed_paths": failed_paths}

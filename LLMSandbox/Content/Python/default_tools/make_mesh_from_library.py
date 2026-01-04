@@ -44,36 +44,38 @@ def spawn_actors(
     """
 
     spawned = []
-    for i, xf in enumerate(actor_transforms):
+    with unreal.ScopedEditorTransaction("Destroy Actors"):  # <-- add this
 
-        class_or_asset_path= xf.get('asset_path')
+        for i, xf in enumerate(actor_transforms):
 
-        # 1. Try to load as a Class first (for Lights/Cameras)
-        spawn_obj = unreal.load_class(None, class_or_asset_path)
-        
-        # 2. If not a class, try to load as an Asset (for Meshes)
-        if not spawn_obj:
-            spawn_obj = unreal.EditorAssetLibrary.load_asset(class_or_asset_path)
+            class_or_asset_path= xf.get('asset_path')
 
-        if not spawn_obj:
-            unreal.log_error(f"Could not find Class or Asset at: {class_or_asset_path}")
-            continue
+            # 1. Try to load as a Class first (for Lights/Cameras)
+            spawn_obj = unreal.load_class(None, class_or_asset_path)
+            
+            # 2. If not a class, try to load as an Asset (for Meshes)
+            if not spawn_obj:
+                spawn_obj = unreal.EditorAssetLibrary.load_asset(class_or_asset_path)
 
-        loc = unreal.Vector(*xf.get('location', [0,0,0]))
-        quat = unreal.Quat(*xf.get('quaternion', [0,0,0,1]))
-        scale = unreal.Vector(*xf.get('scale', [1,1,1]))
+            if not spawn_obj:
+                unreal.log_error(f"Could not find Class or Asset at: {class_or_asset_path}")
+                continue
 
-        # This API handles both Classes and Assets correctly
-        actor = unreal.EditorLevelLibrary.spawn_actor_from_object(spawn_obj, loc, quat.rotator())
-        
-        if actor:
-            label = f"{base_name}_{i}"
-            actor.set_actor_label(label)
-            actor.set_actor_scale3d(scale)
-            spawned.append({
-                "actor_path": actor.get_path_name(),
-                "actor_class": actor.get_class().get_name(),
-            })
+            loc = unreal.Vector(*xf.get('location', [0,0,0]))
+            quat = unreal.Quat(*xf.get('quaternion', [0,0,0,1]))
+            scale = unreal.Vector(*xf.get('scale', [1,1,1]))
+
+            # This API handles both Classes and Assets correctly
+            actor = unreal.EditorLevelLibrary.spawn_actor_from_object(spawn_obj, loc, quat.rotator())
+            
+            if actor:
+                label = f"{base_name}_{i}"
+                actor.set_actor_label(label)
+                actor.set_actor_scale3d(scale)
+                spawned.append({
+                    "actor_path": actor.get_path_name(),
+                    "actor_class": actor.get_class().get_name(),
+                })
             
     return spawned
 
@@ -119,36 +121,38 @@ def update_actors_transforms(
 
     #out_dict = {'return_status':"Failure: You must fill 'updates' param ie:\n "+UPDATES_EX ,'updated_paths':[]}
     updated_paths = []
-    for i, xf in enumerate(actor_transform_updates):
-        try:
-            # 1. Resolve the Actor
-            path = xf.get('actor_path', "")
-            actor = unreal.find_object(None, path)
-            
-            if not actor:
-                unreal.log_warning(f"Batch Update: Could not find actor at {path}")
-                continue
+    with unreal.ScopedEditorTransaction("Update Actor Transforms"):  # <-- add this
 
-            # 2. Extract and cast data
-            l_vals = xf.get('location', [0.0, 0.0, 0.0])
-            q_vals = xf.get('quaternion', [0.0, 0.0, 0.0, 1.0])
-            s_vals = xf.get('scale', [1.0, 1.0, 1.0])
-
-            loc = unreal.Vector(float(l_vals[0]), float(l_vals[1]), float(l_vals[2]))
-            quat = unreal.Quat(float(q_vals[0]), float(q_vals[1]), float(q_vals[2]), float(q_vals[3]))
-            scale = unreal.Vector(float(s_vals[0]), float(s_vals[1]), float(s_vals[2]))
-            
-            # 3. Apply Transform
-            # Using set_actor_transform is cleaner for batching all three properties at once
-            new_transform = unreal.Transform(loc, quat.rotator(), scale)
-            actor.set_actor_transform(new_transform, False, True)
-            
-            updated_paths.append(path)
+        for i, xf in enumerate(actor_transform_updates):
+            try:
+                # 1. Resolve the Actor
+                path = xf.get('actor_path', "")
+                actor = unreal.find_object(None, path)
                 
-        except Exception as e:
-            unreal.log_error(f"Failed to update batch item {i}: {str(e)}")
-            continue
-            
+                if not actor:
+                    unreal.log_warning(f"Batch Update: Could not find actor at {path}")
+                    continue
+
+                # 2. Extract and cast data
+                l_vals = xf.get('location', [0.0, 0.0, 0.0])
+                q_vals = xf.get('quaternion', [0.0, 0.0, 0.0, 1.0])
+                s_vals = xf.get('scale', [1.0, 1.0, 1.0])
+
+                loc = unreal.Vector(float(l_vals[0]), float(l_vals[1]), float(l_vals[2]))
+                quat = unreal.Quat(float(q_vals[0]), float(q_vals[1]), float(q_vals[2]), float(q_vals[3]))
+                scale = unreal.Vector(float(s_vals[0]), float(s_vals[1]), float(s_vals[2]))
+                
+                # 3. Apply Transform
+                # Using set_actor_transform is cleaner for batching all three properties at once
+                new_transform = unreal.Transform(loc, quat.rotator(), scale)
+                actor.set_actor_transform(new_transform, False, True)
+                
+                updated_paths.append(path)
+                    
+            except Exception as e:
+                unreal.log_error(f"Failed to update batch item {i}: {str(e)}")
+                continue
+                
     return updated_paths
 
 from typing import List, Dict
