@@ -274,3 +274,110 @@ def space_apart_intersecting_actors(
     
 
     return actors_moved
+
+@register_tool
+def clump_actors(
+    actor_paths: List[str],
+    attract_radius: float = 900.0,
+    iterations: int = 100,
+    radius_mult: float = 1.0,
+    learning_rate: float = 0.5,
+) -> List[dict]:
+    """
+    Clumps actors together using neighbor attraction + overlap repulsion.
+    
+    USE THIS WHEN:
+    - User says "group these", "cluster", "clump together"
+    - Making organic groupings (bushes, debris piles, crowds)
+    - Objects should be close but not intersecting
+    
+    Args:
+        actor_paths: List of full actor paths to clump.
+        attract_radius: Distance (cm) within which actors attract each other.
+        iterations: Solver iterations.
+        learning_rate: Step size for repulsion.
+        
+    Returns:
+        List[dict]: Each moved actor with actor_path, actor_label, new_location.
+    """
+    attract_strength: float = 2.0,
+
+    actors = []
+    for path in actor_paths:
+        actor = unreal.find_object(None, path)
+        if actor:
+            actors.append(actor)
+            
+    count = len(actors)
+    if count < 2: 
+        return "Skipped: Need at least 2 valid actors."
+
+    # --- PREPARE DATA ---
+    positions = []
+    radii = []
+    
+    for a in actors:
+        pos = a.get_actor_location()
+        positions.append([pos.x, pos.y, pos.z])
+        
+        origin, extent = a.get_actor_bounds(False) 
+        avg_radius = (extent.x + extent.y + extent.z) / (3.0 * radius_mult)
+        radii.append(avg_radius)
+
+    P = np.array(positions, dtype=np.float64)
+    P += np.random.uniform(-0.1, 0.1, P.shape)  # break ties
+    R = np.array(radii).reshape(-1, 1)
+
+    # --- OPTIMIZATION LOOP ---
+    for _ in range(iterations):
+        # Pairwise differences: diff[i,j] = P[i] - P[j]
+        diff_matrix = P[:, np.newaxis, :] - P[np.newaxis, :, :]
+        dist_matrix = np.linalg.norm(diff_matrix, axis=2)
+        np.fill_diagonal(dist_matrix, np.inf)  # ignore self
+        
+        # Normalized directions (i away from j)
+        directions = diff_matrix / (dist_matrix[:, :, np.newaxis] + 1e-6)
+
+        # === REPULSION (existing) ===
+        req_dist_matrix = R + R.T
+        overlap = np.maximum(req_dist_matrix - dist_matrix, 0)
+        repulsion = directions * overlap[:, :, np.newaxis]
+        repulsion_force = np.sum(repulsion, axis=1)  # sum over neighbors
+        
+        # === ATTRACTION (new) ===
+        # Attract toward neighbors within attract_radius, but only if NOT overlapping
+        in_range = (dist_matrix < attract_radius) & (overlap == 0)
+        
+        # Attraction strength falls off with distance (closer = weaker pull, further = stronger)
+        # This prevents jitter when already close
+        attract_weight = np.where(in_range, dist_matrix / attract_radius, 0.0)
+        
+        # Direction for attraction is OPPOSITE of repulsion (toward neighbor, not away)
+        attraction = -directions * (attract_weight[:, :, np.newaxis] * attract_strength)
+        attraction_force = np.sum(attraction, axis=1)
+        
+        # === COMBINE ===
+        total_force = repulsion_force * learning_rate + attraction_force
+        
+        # Clamp step magnitude to 1/5 of radius (same as spacing tool)
+        step_mag = np.linalg.norm(total_force, axis=1, keepdims=True)
+        max_allowed = R * 0.1
+        step_dir = total_force / (step_mag + 1e-9)
+        clamped_mag = np.minimum(step_mag, max_allowed)
+        
+        P += step_dir * clamped_mag
+
+    # --- APPLY ---
+    actors_moved = []
+    with unreal.ScopedEditorTransaction("Clump Actors"):
+        for i, actor in enumerate(actors):
+            new_loc = unreal.Vector(float(P[i][0]), float(P[i][1]), float(P[i][2]))
+            actor.set_actor_location(new_loc, False, True)
+            
+            actors_moved.append({
+                "actor_path": actor.get_path_name(),
+                "actor_label": actor.get_actor_label(),
+                "new_location": [round(float(P[i][k]), 2) for k in range(3)],
+            })
+
+    return actors_moved

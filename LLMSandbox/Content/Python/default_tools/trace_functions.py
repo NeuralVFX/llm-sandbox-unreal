@@ -327,8 +327,8 @@ def ray_cast_array(
             "hit": False,
             "hit_location": None,
             "hit_normal": None,
-            "hit_actor_path": None,
-            "transform": None
+            #"hit_actor_path": None,
+            #"transform": None
         }
 
         if world is None or tquery is None:
@@ -359,23 +359,23 @@ def ray_cast_array(
 
         loc = _hitresult_location(hit)
         nrm = _hitresult_normal(hit)
-        actor_obj = _hitresult_actor(hit)
+        #actor_obj = _hitresult_actor(hit)
 
         if loc is None or nrm is None:
             results.append(out)
             continue
 
-        q = _build_quat_from_normal(nrm, up_hint)
-        actor_path = actor_obj.get_path_name() if actor_obj else None
+       # q = _build_quat_from_normal(nrm, up_hint)
+        #actor_path = actor_obj.get_path_name() if actor_obj else None
 
         out["hit"] = True
         out["hit_location"] = [float(loc.x), float(loc.y), float(loc.z)]
         out["hit_normal"] = [float(nrm.x), float(nrm.y), float(nrm.z)]
-        out["hit_actor_path"] = actor_path
-        out["transform"] = {
-            "location": [float(loc.x), float(loc.y), float(loc.z)],
-            "quat": [float(q.x), float(q.y), float(q.z), float(q.w)]
-        }
+        #out["hit_actor_path"] = actor_path
+        #out["transform"] = {
+        #    "location": [float(loc.x), float(loc.y), float(loc.z)],
+        #    "quat": [float(q.x), float(q.y), float(q.z), float(q.w)]
+        #}
 
         results.append(out)
 
@@ -588,7 +588,7 @@ def _transform_to_dict(xform: unreal.Transform) -> dict:
 ################################
 
 @register_tool
-def look_at_scene_geometry(
+def look_at_scene_depth(
    # forwards to ray_cast_array by temporarily toggling inside it? (see note below)
 ) -> List[Dict[str, Any]]:
     """
@@ -604,8 +604,6 @@ def look_at_scene_geometry(
 
     Returns per-sample results similar to ray_cast_array, and also includes:
       - ndc_xy : [x,y] in [-1..1]
-      - ij     : [i,j] grid coordinates (0..w-1, 0..h-1), with j=0 at bottom
-      - dir    : world direction used for that ray
       - distance_from_camera_cm : float
       - deg_from_view_center    : float (0 at center ray)
 
@@ -680,9 +678,9 @@ def look_at_scene_geometry(
             
 
             hit["ndc_xy"] = [float(ndc_x), float(ndc_y)]
-            hit["ij"] = [int(i), int(j)]
-            hit["dir_world"] = [float(dir_world[0]), float(dir_world[1]), float(dir_world[2])]
-            hit["distance_from_camera_cm"] = dist_cm
+            #hit["ij"] = [int(i), int(j)]
+            #hit["dir_world"] = [float(dir_world[0]), float(dir_world[1]), float(dir_world[2])]
+            hit["dist"] = dist_cm
             hit["deg_from_view_center"] = deg_from_center
             out.append(hit)
 
@@ -691,38 +689,37 @@ def look_at_scene_geometry(
 
 ##############################
 # View Actors Screenspace
-##############################    
+############################## 
 
 @register_tool
-def view_actors_screenspace( actor_paths: List[str],max_results: int = 5000) -> List[Dict[str, Any]]:
+def view_actors_screenspace(max_results: int = 5000) -> List[Dict[str, Any]]:
     """
-    Get screen-space positions (NDC) for actors visible in the Editor viewport.
+    Get visible actors in the Editor viewport with full transform and mesh details.
     
     USE THIS WHEN:
     - User references objects by screen position ("the thing on the left")
     - Need to know which actors are currently visible to the user
-    - Sorting/filtering actors by what the user can see
     - Understanding spatial relationships from user's viewpoint
+    - Need mesh/transform info for visible objects
     
-    NOT FOR: Detecting geometry shape (use look_at_scene_geometry instead)
-
     Args:
-        actor_paths: List of full actor object paths (from `actor.get_path_name()`).
-                     If empty, evaluates all actors in the level.
-        max_results: Max number of visible actors to return (sorted by depth, closest first).
+        max_results: Max number of visible actors to return (sorted by angle from center).
 
     Returns:
-        A list of dicts, each:
-          - actor_path: full object path (use `unreal.find_object(None, actor_path)` to resolve)
-          - world_center_xyz: [x,y,z] world bounds center
-          - depth: center depth along camera forward axis (cm)
-          - ndc_xy: [x,y] in Normalized Device Coordinates (-1..1), where (-1,-1) is bottom-left and (1,1) is top-right
-
-    Notes:
-        Uses assumed camera params inside the function (hfov/aspect). No occlusion testing.
+        List of dicts for each visible actor:
+          - actor_path: Full path for unreal.find_object()
+          - actor_label: Human-readable name
+          - actor_class: e.g. "StaticMeshActor", "PointLight"
+          - is_selected: bool
+          - ndc_xy: [x,y] in [-1..1], (-1,-1)=bottom-left, (1,1)=top-right
+          - depth: Distance along camera forward (cm)
+          - angle_from_center_deg: 0 = dead center of screen
+          - bounds_extent: [x,y,z] half-size of bounding box
+          - actor_world: {location, quat, scale} transform dict
+          - static_meshes: List of mesh components with paths and transforms
     """
     hfov_deg = 90.0
-    aspect= 1
+    aspect = 1.0
     near = 10.0
     far = 1.0e12
     expand = 0.0
@@ -734,14 +731,12 @@ def view_actors_screenspace( actor_paths: List[str],max_results: int = 5000) -> 
     current_selection = unreal.EditorLevelLibrary.get_selected_level_actors()
     selection_paths = {a.get_path_name() for a in current_selection if a}
 
-    actors, centers, extents = _gather_actor_bounds(world, 
-                                                    actor_paths,
-                                                    include_child_actors)
+    actors, centers, extents = _gather_actor_bounds(world, [], include_child_actors)
 
     C = _v3_to_np(cam_loc)
     F, R, U = _camera_basis_np(cam_rot)
 
-    # corners in camera space
+    # Frustum culling (vectorized)
     corners = _aabb_corners_from_center_extent(centers, extents)
     V = corners - C[None, None, :]
     x = V @ F
@@ -753,7 +748,6 @@ def view_actors_screenspace( actor_paths: List[str],max_results: int = 5000) -> 
     tan_h = np.tan(hfov * 0.5) * (1.0 + float(expand))
     tan_v = np.tan(vfov * 0.5) * (1.0 + float(expand))
 
-    # plane test for visibility
     outside_any = (
         np.all((x - near) < 0, axis=1) |
         np.all((far - x) < 0, axis=1) |
@@ -764,18 +758,17 @@ def view_actors_screenspace( actor_paths: List[str],max_results: int = 5000) -> 
     )
     visible = ~outside_any
 
-    # center ndc + depth
+    # NDC + depth (vectorized)
     centers_V = centers - C[None, :]
     depth = centers_V @ F
     right = centers_V @ R
-    up    = centers_V @ U
+    up = centers_V @ U
 
     eps = 1e-9
     safe_depth = np.maximum(depth, eps)
     ndc_x = (right / safe_depth) / tan_h
-    ndc_y = (up    / safe_depth) / tan_v
+    ndc_y = (up / safe_depth) / tan_v
     angle_from_center_deg = np.degrees(np.arctan2(np.sqrt(right*right + up*up), depth))
-
 
     idx = np.nonzero(visible)[0]
     if len(idx) > max_results:
@@ -784,20 +777,99 @@ def view_actors_screenspace( actor_paths: List[str],max_results: int = 5000) -> 
     results = []
     for i in idx.tolist():
         a = actors[int(i)]
-        results.append({
-            "actor_path": a.get_path_name(),
-            "is_selected": a.get_path_name() in selection_paths,  # <-- add this
-            "world_center_xyz": [float(centers[int(i),0]), float(centers[int(i),1]), float(centers[int(i),2])],
-            "depth": float(depth[int(i)]),
-            "ndc_xy": [float(ndc_x[int(i)]), float(ndc_y[int(i)])],  
-            "angle_from_center_deg": float(angle_from_center_deg[int(i)]),
+        actor_path = a.get_path_name()
 
+        # Gather static mesh components
+        static_meshes = []
+        comps = a.get_components_by_class(unreal.StaticMeshComponent)
+        for c in comps:
+            if not c:
+                continue
+            sm = _get_static_mesh_from_component(c)
+            comp_world = _component_world_transform(c)
+            static_meshes.append({
+                "mesh_path": str(sm.get_path_name()) if sm else "",
+                "component_world": _transform_to_dict(comp_world),
+            })
+
+        results.append({
+            # Identity
+            "actor_path": actor_path,
+            "actor_label": a.get_actor_label(),
+            "actor_class": a.get_class().get_name(),
+            "is_selected": actor_path in selection_paths,
+            # Screen-space
+            "ndc_xy": [float(ndc_x[int(i)]), float(ndc_y[int(i)])],
+            "depth": float(depth[int(i)]),
+            "angle_from_center_deg": float(angle_from_center_deg[int(i)]),
+            # World-space
+            "world_center_xyz": [float(centers[int(i),0]), float(centers[int(i),1]), float(centers[int(i),2])],
+            "bounds_extent": [float(extents[int(i),0]), float(extents[int(i),1]), float(extents[int(i),2])],
+            "actor_world": _transform_to_dict(a.get_actor_transform()),
+            # Meshes
+            "static_meshes": static_meshes,
         })
 
-    # helpful ordering for an LLM: closest first
     results.sort(key=lambda r: r["angle_from_center_deg"])
     return results
 
+
+############################
+# Uber viewport view
+############################
+
+def analyze_viewport(max_actor_results: int = 5000) -> Dict[str, Any]:
+    """
+    Complete viewport analysis: what actors are visible AND what geometry is in view.
+    
+    USE THIS WHEN:
+    - User asks "what do you see" or "describe the scene"
+    - Need both actor-level info AND geometric depth/surface data
+    - Starting point for understanding an unfamiliar scene
+    - User wants comprehensive situational awareness
+    
+    This combines two analyses:
+    1. ACTORS: Which actors are in the camera frustum (fast, bounding-box based)
+    2. GEOMETRY: Ray-traced depth samples showing actual surfaces (slower, more precise)
+    
+    Use the individual tools if you only need one:
+    - view_actors_screenspace() — just actors, faster
+    - look_at_scene_geometry() — just geometry rays, slower
+    
+    Args:
+        max_actor_results: Maximum actors to return (sorted by angle from view center).
+    
+    Returns:
+        dict with two keys:
+        
+        "actors": List of visible actors, each with:
+            - actor_path: Full path for unreal.find_object()
+            - is_selected: bool
+            - ndc_xy: [x, y] screen position in [-1..1]
+            - depth: Distance along camera forward axis (cm)
+            - angle_from_center_deg: How far from screen center (0 = dead center)
+            
+        "geometry": Grid of ray hits from camera, each with:
+            - hit_location: [x, y, z] world position
+            - hit_normal: [x, y, z] surface normal
+            - hit_actor_path: What actor was hit (if any)
+            - ndc_xy: [x, y] screen position of this ray
+            - ij: [col, row] grid coordinates
+            - distance_from_camera_cm: Depth to hit point
+            - deg_from_view_center: Angle from screen center
+            
+    Example response interpretation:
+        - actors with small angle_from_center_deg are near crosshair
+        - geometry samples with similar distance_from_camera_cm form a surface
+        - gaps in geometry grid indicate sky/empty space
+    """
+    actors_result = view_actors_screenspace(max_results=max_actor_results)
+    geometry_result = look_at_scene_geometry()
+    
+    return {
+        "actors": actors_result,
+        "geometry": geometry_result,
+    }
 
 ##############################
 # Get Actor Transforms
@@ -912,7 +984,7 @@ def get_actor_transforms(
 
 
 @register_tool
-def scatter(actor_paths: List[str],radius: float=200.0):
+def randomize_position(actor_paths: List[str],radius: float=200.0):
     """
     Randomize positions of existing actors within a spherical radius.
     
@@ -962,7 +1034,9 @@ def scatter(actor_paths: List[str],radius: float=200.0):
         for a in (_resolve_actor_paths_or_selected(actor_paths) or []):
 
             d=unreal.Vector(rng.uniform(-1,1),rng.uniform(-1,1),rng.uniform(-1,1)).normal()
-            a.set_actor_location(a.get_actor_location() + d*rng.uniform(0.0, radius), False, False)
+            new_loc = a.get_actor_location() + d * rng.uniform(0.0, radius)
+
+            a.set_actor_location(new_loc, False, False)
 
             results.append({
                 "actor_path": a.get_path_name(),
@@ -973,6 +1047,148 @@ def scatter(actor_paths: List[str],radius: float=200.0):
     return results
     
 
+
+@register_tool
+def randomize_scale_percent(
+    actor_paths: List[str],
+    percent: float,
+) -> List[Dict[str, Any]]:
+    """
+    Randomly perturb an actor’s **uniform** scale by a percentage.
+
+    * ``percent`` – maximum deviation expressed as a **percentage**.
+      The random factor is drawn from **[1‑p , 1 + p]** where
+      ``p = percent / 100``.  Example: ``percent=30`` → factor ∈ [0.70, 1.30].
+
+    * ``actor_paths`` – list of full UObject paths; if empty the currently
+      selected actors are used.
+
+    Returns
+    -------
+    list[dict]
+        {
+            "actor_path":  str,
+            "actor_label": str,
+            "new_scale":   [x, y, z]   # all three values identical
+        }
+    """
+    if percent < 0.0:
+        raise ValueError("percent must be non‑negative")
+
+    # Convert to a fraction (e.g. 30 → 0.30)
+    p = percent / 100.0
+
+    rng = random.Random()
+    results: List[Dict[str, Any]] = []
+
+    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only=False)
+    if not actors:
+        return results
+
+    with unreal.ScopedEditorTransaction("Randomize Scales (percent)"):
+        for actor in actors:
+            # Current (average) uniform scale
+            cur_vec: unreal.Vector = actor.get_actor_scale3d()
+            base_scale = (cur_vec.x + cur_vec.y + cur_vec.z) / 3.0
+
+            # Random deviation in [-p, +p]
+            delta = rng.uniform(-p, p)          # e.g. -0.30 … +0.30
+            factor = 1.0 + delta                # e.g. 0.70 … 1.30
+
+            new_val = base_scale * factor
+            new_vec = unreal.Vector(new_val, new_val, new_val)
+
+            # Apply the new uniform scale
+            actor.set_actor_scale3d(new_vec)
+
+            results.append({
+                "actor_path":  actor.get_path_name(),
+                "actor_label": actor.get_actor_label(),
+                "new_scale": [
+                    float(new_vec.x), float(new_vec.y), float(new_vec.z)
+                ],
+            })
+
+    return results
+      
+@register_tool
+def randomize_rotation(
+    actor_paths: List[str],
+    roll_mult: float,
+    pitch_mult: float,
+    yaw_mult: float,
+    space: str,
+) -> List[Dict[str, Any]]:
+    """
+    Randomly perturb an actor’s rotation.
+
+    * `roll_mult`, `pitch_mult`, `yaw_mult` – maximum *absolute* offset in **degrees**.
+      The offset is drawn uniformly from [-multiplier, +multiplier] (so a value of 360
+      can spin the actor a full turn or more).
+
+    * `space` – ``"world"`` (adds the delta to the actor’s world rotation) or
+      ``"object"`` (applies the delta in the actor’s local space).
+
+    Returns a list of dicts with the actor path, label and the new rotation expressed
+    as **Roll‑Pitch‑Yaw** (degrees).
+    """
+    space = space.lower()
+    if space not in {"world", "object"}:
+        raise ValueError("space must be either 'world' or 'object'")
+
+    rng = random.Random()
+    results: List[Dict[str, Any]] = []
+
+    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only=False)
+    if not actors:
+        return results
+
+    with unreal.ScopedEditorTransaction("Randomize Rotations"):
+        for actor in actors:
+            # ------- random delta -------------------------------------------------
+            d_roll  = rng.uniform(-1.0, 1.0) * roll_mult
+            d_pitch = rng.uniform(-1.0, 1.0) * pitch_mult
+            d_yaw   = rng.uniform(-1.0, 1.0) * yaw_mult
+            delta_rot = unreal.Rotator(d_pitch, d_yaw, d_roll)   # (pitch, yaw, roll)
+
+            if space == "world":
+                # world‑space: just add the delta to the current world rot.
+                cur_rot = actor.get_actor_rotation()
+                new_rot = unreal.Rotator(
+                    cur_rot.pitch + delta_rot.pitch,
+                    cur_rot.yaw   + delta_rot.yaw,
+                    cur_rot.roll  + delta_rot.roll,
+                )
+                # UE 5.6: two‑arg call – the second arg is the *teleport* flag.
+                actor.set_actor_rotation(new_rot, True)   # True → teleport, no sweep
+
+            else:   # object‑space
+                # Build a transform that contains only the rotation delta.
+                cur_xform   = actor.get_actor_transform()
+                delta_xform = unreal.Transform(
+                    unreal.Vector(0, 0, 0),   # no translation
+                    delta_rot,
+                    unreal.Vector(1, 1, 1)    # no scale change
+                )
+                # Compose the current world transform with the delta (local rotation)
+                new_xform = unreal.MathLibrary.compose_transforms(cur_xform, delta_xform)
+                actor.set_actor_transform(new_xform, False, True)   # keep location/scale, teleport
+                new_rot = new_xform.rotation.rotator()
+
+            # ------- record result ------------------------------------------------
+            results.append({
+                "actor_path": actor.get_path_name(),
+                "actor_label": actor.get_actor_label(),
+                "new_rotation_rpy": [
+                    float(new_rot.roll),
+                    float(new_rot.pitch),
+                    float(new_rot.yaw),
+                ],
+            })
+
+    return results
+
+
 @register_tool
 def scatter_replicate(
     actor_paths: List[str],
@@ -980,15 +1196,13 @@ def scatter_replicate(
     radius: float = 200.0,
 ) -> List[Dict[str, Any]]:
     """
-    Duplicate actors and scatter the copies around each original.
+    Duplicate actors and scatter all
     
     USE THIS WHEN:
     - User says "scatter copies", "duplicate and spread", "populate area"
     - Creating clusters of similar objects (trees, rocks, debris)
     - Filling an area with variations of existing objects
     
-    Original actors stay in place; only duplicates are randomized.
-
     Selection logic:
       - If actor_paths is non-empty: uses those actors.
       - If empty: uses currently selected actors.
@@ -1034,9 +1248,10 @@ def scatter_replicate(
                     all_dupes.append(d)
                 else:
                     break
+            all_dupes.append(src)
 
-            # Randomize duplicates only
-            for i, a in enumerate(all_dupes[:int(duplicates_per_actor)]):
+            # Randomize all
+            for i, a in enumerate(all_dupes):
                 dvec = unreal.Vector(
                     rng.uniform(-1, 1),
                     rng.uniform(-1, 1),
@@ -1091,3 +1306,124 @@ def destroy_actors(
                 failed_paths.append(actor.get_path_name() if actor else "unknown")
         
     return {"success_count": success_count, "failed_count": len(failed_paths), "failed_paths": failed_paths}
+
+
+def transform_actors(
+    selected_only: bool,
+    values: List[float],
+    mode: str,
+    space: str,
+    actor_paths: List[str],
+) -> List[Dict[str, Any]]:
+    """
+    Apply **one** transformation (translate, rotate or scale) to the supplied
+    actors.  The function never mixes operations – only the operation indicated
+    by ``mode`` is performed.
+
+    Parameters
+    ----------
+    actor_paths : list[str] | None
+        Explicit actor path names to operate on. If ``None`` the function falls
+        back to either the selected actors (``selected_only=True``) or *all*
+        actors in the level.
+
+    selected_only : bool
+        When ``actor_paths`` is ``None`` this flag decides whether to use the
+        current selection (``True``) or every actor in the level (``False``).
+
+    values : list[float] (length = 3)
+        The three numbers that encode the operation:
+        * **translate** – X/Y/Z offset in cm.
+        * **rotate**    – Roll/Pitch/Yaw in degrees.
+        * **scale**     – X/Y/Z scale multipliers (1 = no change).
+
+    mode : str
+        One of ``"translate"``, ``"rotate"``, ``"scale"`` (case‑insensitive).
+
+    space : str
+        ``"world"`` or ``"object"``.  Determines whether translation/rotation are
+        applied in world space or the actor’s local space.  Ignored for scaling.
+
+    Returns
+    -------
+    list[dict]
+        For each processed actor a dict containing:
+        ``actor_path``, ``actor_label``, ``new_location``, ``new_rotation_rpy``,
+        ``new_scale``.
+    """
+    # ------------------------------------------------------------------ #
+    # Validate inputs
+    # ------------------------------------------------------------------ #
+    if values is None or len(values) != 3:
+        raise ValueError("`values` must be a list/tuple of three floats.")
+    mode = mode.lower()
+    if mode not in {"translate", "rotate", "scale"}:
+        raise ValueError("`mode` must be one of: 'translate', 'rotate', 'scale'.")
+    space = space.lower()
+    if space not in {"world", "object"}:
+        raise ValueError("`space` must be either 'world' or 'object'.")
+
+    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
+    if not actors:
+        return []  # nothing to do
+
+    use_object_space = space == "object"
+    results = []
+
+    # ------------------------------------------------------------------ #
+    # Build the delta transform for the chosen mode only
+    # ------------------------------------------------------------------ #
+    # Default to identity components
+    delta_loc   = unreal.Vector(0.0, 0.0, 0.0)
+    delta_rot   = unreal.Rotator(0.0, 0.0, 0.0)   # pitch, yaw, roll order in ctor
+    delta_scale = unreal.Vector(1.0, 1.0, 1.0)
+
+    if mode == "translate":
+        delta_loc = unreal.Vector(float(values[0]), float(values[1]), float(values[2]))
+    elif mode == "rotate":
+        # Rotator ctor: (pitch, yaw, roll)
+        delta_rot = unreal.Rotator(float(values[1]), float(values[2]), float(values[0]))
+    elif mode == "scale":
+        delta_scale = unreal.Vector(float(values[0]), float(values[1]), float(values[2]))
+
+    delta_transform = unreal.Transform(delta_loc, delta_rot, delta_scale)
+
+    # ------------------------------------------------------------------ #
+    # Apply to each actor inside a scoped transaction (undo‑able)
+    # ------------------------------------------------------------------ #
+    with unreal.ScopedEditorTransaction(f"{mode.title()} Actors"):
+        for actor in actors:
+            if not actor:
+                continue
+
+            current_xform = actor.get_actor_transform()
+
+            if mode in {"translate", "rotate"}:
+                # Choose space handling
+                if use_object_space:
+                    # Object space → compose after current transform
+                    new_xform = unreal.MathLibrary.compose_transforms(current_xform, delta_transform)
+                else:
+                    # World space → compose before current transform
+                    new_xform = unreal.MathLibrary.compose_transforms(delta_transform, current_xform)
+            else:  # scale – always local (object) space
+                new_xform = unreal.MathLibrary.compose_transforms(current_xform, delta_transform)
+
+            # Apply without sweep and with teleport (no physics interpolation)
+            actor.set_actor_transform(new_xform, False, True)
+
+            # Gather result info
+            loc   = new_xform.translation
+            rot   = new_xform.rotation.rotator()   # returns Rotator (pitch,yaw,roll)
+            scale = new_xform.scale3d
+
+            results.append({
+                "actor_path": actor.get_path_name(),
+                "actor_label": actor.get_actor_label(),
+                "new_location": [float(loc.x), float(loc.y), float(loc.z)],
+                # Convert back to Roll‑Pitch‑Yaw order for consistency with tests
+                "new_rotation_rpy": [float(rot.roll), float(rot.pitch), float(rot.yaw)],
+                "new_scale": [float(scale.x), float(scale.y), float(scale.z)],
+            })
+
+    return results
