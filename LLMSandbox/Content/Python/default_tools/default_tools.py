@@ -11,17 +11,14 @@ import re
 # Vector / Math helpers
 # ----------------------------
 
-def _resolve_actor_paths_or_selected(
+def _resolve_actor_paths(
     actor_paths: Optional[List[str]] = None,
-    selected_only: bool = False
 ) -> List[unreal.Actor]:
     """
-    Resolve actors from paths, or fall back to selection/all actors.
+    Resolve actors from paths
     
     Args:
         actor_paths: If provided, resolve these specific paths.
-        selected_only: When actor_paths is empty:
-                       True = selected actors, False = all actors.
     """
     if actor_paths:
         actors = []
@@ -30,11 +27,9 @@ def _resolve_actor_paths_or_selected(
             if a and isinstance(a, unreal.Actor):
                 actors.append(a)
         return actors
-    
-    if selected_only:
-        return [a for a in unreal.EditorLevelLibrary.get_selected_level_actors() if a]
+
     else:
-        return [a for a in unreal.EditorLevelLibrary.get_all_level_actors() if a]
+        return []
 
 
 def _v3_to_np(v: unreal.Vector) -> np.ndarray:
@@ -247,6 +242,7 @@ def ray_cast_array(
     ignore_actor_paths: List[str] = [],
     distance: float = 10000,
     direction:List[float] = [0,0,-1],
+    draw_debug:bool = True,
 ) -> List[dict]:
     """
     Batch line-trace (raycast) in the current Unreal **Editor World** and return a
@@ -297,7 +293,6 @@ def ray_cast_array(
               "up_hint").
     """
     debug_lifetime = 2.0
-    draw_debug = True
     trace_complex = True
 
     if rays is None:
@@ -385,11 +380,11 @@ def ray_cast_array(
 
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def move_actor_until_hit(
     actor_paths: List[str],
-    selected_only: bool = False, 
     distance: float = 10000,
-    buffer_distance: float = 5000.0,
+    buffer_distance: float = 200.0,
     direction: List[float] = [0, 0, -1],
     set_rotation: bool = True, 
 ) -> List[dict]:
@@ -443,7 +438,8 @@ def move_actor_until_hit(
         return []
 
     # Resolve ignore actors
-    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
+    selected_only = False
+    actors = _resolve_actor_paths(actor_paths)
 
     ignore_actors = _sanitize_ignore_actors(actors)
 
@@ -617,7 +613,6 @@ def look_at_scene_depth(
     distance = 1000000.0
     ignore_actor_paths = []
     jitter = False
-    draw_debug = True    
 
     cam_loc, cam_rot = unreal.EditorLevelLibrary.get_level_viewport_camera_info()
 
@@ -664,6 +659,8 @@ def look_at_scene_depth(
                 ignore_actor_paths=ignore_actor_paths,
                 distance=float(distance),
                 direction=[float(dir_world[0]), float(dir_world[1]), float(dir_world[2])],
+                draw_debug = False,
+
             )
             # angle from camera center ray (in degrees)
             dot_fd = float(np.clip(np.dot(F_unit, dir_unit), -1.0, 1.0))
@@ -879,8 +876,8 @@ def analyze_viewport(max_actor_results: int = 5000) -> Dict[str, Any]:
 
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def get_actor_transforms(
-    selected_only: bool,
     actor_paths: list[str],
 
 ) -> dict:
@@ -892,15 +889,10 @@ def get_actor_transforms(
     - User asks "where is X" or "how big is X"
     - Preparing data for move/rotate/scale operations
     - Inspecting what meshes an actor contains
-    
-    Tip: Use selected_only=True when user says "the selected objects"
-    
+        
     Args:
         actor_paths: List of full Actor Path Names (e.g., ["PersistentLevel.Chair_2"]). 
                      Leave empty if you want to search based on selection or the whole level.
-        selected_only: Only used if 'actor_paths' is empty. 
-                       True = Process only selected actors. 
-                       False = Process all actors in the level.
 
     Returns:
             dict: A dictionary where keys are Actor Paths and values are metadata.
@@ -931,8 +923,9 @@ def get_actor_transforms(
     cam_loc, cam_rot = unreal.EditorLevelLibrary.get_level_viewport_camera_info()
     C = _v3_to_np(cam_loc)
     F, R, U = _camera_basis_np(cam_rot)
-
-    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
+    
+    selected_only = False
+    actors = _resolve_actor_paths(actor_paths)
     # Get the current selection set to compare against for 'is_selected'
     current_selection = unreal.EditorLevelLibrary.get_selected_level_actors()
     selection_paths = {a.get_path_name() for a in current_selection if a}
@@ -986,6 +979,7 @@ def get_actor_transforms(
 
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def randomize_position(actor_paths: List[str],radius: float=200.0):
     """
     Randomize positions of existing actors within a spherical radius.
@@ -1033,7 +1027,7 @@ def randomize_position(actor_paths: List[str],radius: float=200.0):
     results = []
     with unreal.ScopedEditorTransaction("Randomize Positions"):
 
-        for a in (_resolve_actor_paths_or_selected(actor_paths) or []):
+        for a in _resolve_actor_paths(actor_paths):
 
             d=unreal.Vector(rng.uniform(-1,1),rng.uniform(-1,1),rng.uniform(-1,1)).normal()
             new_loc = a.get_actor_location() + d * rng.uniform(0.0, radius)
@@ -1051,6 +1045,7 @@ def randomize_position(actor_paths: List[str],radius: float=200.0):
 
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def randomize_scale_percent(
     actor_paths: List[str],
     percent: float,
@@ -1083,7 +1078,7 @@ def randomize_scale_percent(
     rng = random.Random()
     results: List[Dict[str, Any]] = []
 
-    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only=False)
+    actors = _resolve_actor_paths(actor_paths)
     if not actors:
         return results
 
@@ -1114,6 +1109,7 @@ def randomize_scale_percent(
     return results
       
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def randomize_rotation(
     actor_paths: List[str],
     roll_mult: float,
@@ -1141,7 +1137,7 @@ def randomize_rotation(
     rng = random.Random()
     results: List[Dict[str, Any]] = []
 
-    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only=False)
+    actors = _resolve_actor_paths(actor_paths)
     if not actors:
         return results
 
@@ -1151,15 +1147,15 @@ def randomize_rotation(
             d_roll  = rng.uniform(-1.0, 1.0) * roll_mult
             d_pitch = rng.uniform(-1.0, 1.0) * pitch_mult
             d_yaw   = rng.uniform(-1.0, 1.0) * yaw_mult
-            delta_rot = unreal.Rotator(d_pitch, d_yaw, d_roll)   # (pitch, yaw, roll)
+            delta_rot = unreal.Rotator(pitch=d_pitch, yaw=d_yaw,roll= d_roll)   # (pitch, yaw, roll)
 
             if space == "world":
                 # world‑space: just add the delta to the current world rot.
                 cur_rot = actor.get_actor_rotation()
                 new_rot = unreal.Rotator(
-                    cur_rot.pitch + delta_rot.pitch,
-                    cur_rot.yaw   + delta_rot.yaw,
-                    cur_rot.roll  + delta_rot.roll,
+                    pitch = cur_rot.pitch + delta_rot.pitch,
+                    yaw = cur_rot.yaw   + delta_rot.yaw,
+                    roll = cur_rot.roll  + delta_rot.roll,
                 )
                 # UE 5.6: two‑arg call – the second arg is the *teleport* flag.
                 actor.set_actor_rotation(new_rot, True)   # True → teleport, no sweep
@@ -1192,6 +1188,7 @@ def randomize_rotation(
 
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def scatter_replicate(
     actor_paths: List[str],
     duplicates_per_actor: int = 5,
@@ -1204,16 +1201,13 @@ def scatter_replicate(
     - User says "scatter copies", "duplicate and spread", "populate area"
     - Creating clusters of similar objects (trees, rocks, debris)
     - Filling an area with variations of existing objects
-    
-    Selection logic:
-      - If actor_paths is non-empty: uses those actors.
-      - If empty: uses currently selected actors.
+
 
     Returns a list of dicts describing the spawned duplicates.
     """
     rng = random.Random()
     world = unreal.EditorLevelLibrary.get_editor_world()
-    targets = _resolve_actor_paths_or_selected(actor_paths) or []
+    targets = _resolve_actor_paths(actor_paths)
     if not targets or duplicates_per_actor <= 0:
         return []
 
@@ -1250,7 +1244,7 @@ def scatter_replicate(
                     all_dupes.append(d)
                 else:
                     break
-            all_dupes.append(src)
+            #all_dupes.append(src)
 
             # Randomize all
             for i, a in enumerate(all_dupes):
@@ -1272,10 +1266,9 @@ def scatter_replicate(
     return results
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def destroy_actors(
     actor_paths: List[str],
-    selected_only: bool = False,  # <-- ADD
-
 ) -> dict:
     """
     Permanently deletes multiple actors from the world using their full path names.
@@ -1292,7 +1285,8 @@ def destroy_actors(
             "failed_paths": ["PersistentLevel.Invalid_Actor_99"]
         }
     """
-    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
+    selected_only = False
+    actors = _resolve_actor_paths(actor_paths)
     
     success_count = 0
     failed_paths = []
@@ -1309,9 +1303,9 @@ def destroy_actors(
         
     return {"success_count": success_count, "failed_count": len(failed_paths), "failed_paths": failed_paths}
 
-
+@register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def transform_actors(
-    selected_only: bool,
     values: List[float],
     mode: str,
     space: str,
@@ -1325,13 +1319,9 @@ def transform_actors(
     Parameters
     ----------
     actor_paths : list[str] | None
-        Explicit actor path names to operate on. If ``None`` the function falls
-        back to either the selected actors (``selected_only=True``) or *all*
+        Explicit actor path names to operate on. If ``None`` the function falls *all*
         actors in the level.
 
-    selected_only : bool
-        When ``actor_paths`` is ``None`` this flag decides whether to use the
-        current selection (``True``) or every actor in the level (``False``).
 
     values : list[float] (length = 3)
         The three numbers that encode the operation:
@@ -1364,8 +1354,9 @@ def transform_actors(
     space = space.lower()
     if space not in {"world", "object"}:
         raise ValueError("`space` must be either 'world' or 'object'.")
-
-    actors = _resolve_actor_paths_or_selected(actor_paths, selected_only)
+        
+    selected_only = False
+    actors = _resolve_actor_paths(actor_paths)
     if not actors:
         return []  # nothing to do
 
@@ -1384,7 +1375,7 @@ def transform_actors(
         delta_loc = unreal.Vector(float(values[0]), float(values[1]), float(values[2]))
     elif mode == "rotate":
         # Rotator ctor: (pitch, yaw, roll)
-        delta_rot = unreal.Rotator(float(values[1]), float(values[2]), float(values[0]))
+        delta_rot = unreal.Rotator(roll=float(values[0]), pitch=float(values[1]), yaw=float(values[2]))
     elif mode == "scale":
         delta_scale = unreal.Vector(float(values[0]), float(values[1]), float(values[2]))
 
@@ -1583,6 +1574,7 @@ from typing import List, Dict
 
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def space_apart_intersecting_actors(
     actor_paths: List[str],
 
@@ -1701,6 +1693,7 @@ def space_apart_intersecting_actors(
 
 
 @register_tool
+@refine_actor_list_param("actor_paths", min_items=1, required=True)
 def clump_actors(
     actor_paths: List[str],
     attract_radius: float = 900.0,

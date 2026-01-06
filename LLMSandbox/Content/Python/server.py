@@ -116,6 +116,7 @@ def load_tools(tools_dir):
             mod.register_tool = register_tool
             mod.shell = shell
             mod.refine_schema = refine_schema
+            mod.refine_actor_list_param = refine_actor_list_param
             mod.ToolSchema = ToolSchema
             mod.VECTOR3 = VECTOR3
             mod.VECTOR4 = VECTOR4

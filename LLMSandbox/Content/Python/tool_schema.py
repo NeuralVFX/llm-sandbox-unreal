@@ -88,3 +88,38 @@ def refine_schema(param_name, item_schema, required_fields=None):
         )
         return wrapper
     return decorator
+
+import copy
+
+def refine_actor_list_param(param_name: str = "actor_paths", *, min_items: int = 1, required: bool = True):
+    """
+    SUPER SIMPLE: force `param_name` to be a non-empty list of strings.
+
+    - Works with your ToolSchema wrapper approach.
+    - Does NOT touch your existing refine_schema.
+    - Only supports: array-of-strings params (Actor path list).
+    """
+    def decorator(func):
+        # Ensure ToolSchema wrapper
+        wrapper = func if hasattr(func, "schema") else ToolSchema(func)
+
+        s = wrapper.schema
+        fn = s.setdefault("function", {})
+        params = fn.setdefault("parameters", {})
+        params["type"] = "object"
+        props = params.setdefault("properties", {})
+
+        props[param_name] = {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": int(min_items),
+            "description": "REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list."
+        }
+
+        if required:
+            req = params.setdefault("required", [])
+            if param_name not in req:
+                req.append(param_name)
+
+        return wrapper
+    return decorator
