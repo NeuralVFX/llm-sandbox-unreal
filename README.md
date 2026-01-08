@@ -2,7 +2,7 @@
 <p align="center">
   <img src="assets/demo.gif" alt="Demo">
 </p>
-### This project one piece of a two part system, this is the Unreal Plugin
+### This project has two components:
 - Web-Interface: [unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)
 - Unreal Plugin: [unreal-llm-sandbox-plugin](https://github.com/NeuralVFX/unreal-llm-sandbox-plugin)  <--- You are here
 # What is this?
