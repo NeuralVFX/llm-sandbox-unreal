@@ -3,7 +3,7 @@
   <img src="assets/demo.gif" alt="Demo">
 </p>
 
-## What is this?
+# What is this?
 A web interface to Unreal Engine, which allows:
 - Easy expirimentation with Python
 - Review of code and cout output/erros via LLM
@@ -18,7 +18,7 @@ A small set of working agentic tools is provided with this, but thats not the po
 - **Agentic Tool Use** - LLM can use tools directly in Unreal Engine
 - **User Tools** - Build and register custom agentic tools instantly
 
-## Installation
+# Installation
 
 1. Copy the `LLMSandbox` folder to your project's `Plugins/` directory
 2. Restart Unreal Engine
@@ -30,7 +30,7 @@ A small set of working agentic tools is provided with this, but thats not the po
 5. From the `LLM Sandbox Tools` menu, click `Install Dependencies`
 6. Restart Unreal Engine
 
-### Web Interface
+# Web Interface
 
 Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)** to use `Web Browser` interface
 
@@ -52,7 +52,7 @@ The web app provides:
 - `Markdown Cells` - Write notes in Markdown
 - `LLM Prompt Cells` - Chat with LLMs that have full context of your notebook + agentic control of Unreal
 
-### Registering Custom Agent Tools
+# Registering Custom Agent Tools
 
 Syntax to register a new agentic tool:
 ```python
