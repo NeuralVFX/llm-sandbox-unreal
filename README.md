@@ -82,11 +82,8 @@ def spawn_cube(location_x: float, location_y: float, location_z: float):
 #### To use:
 - Open a `Prmopt Cell`, Click 🛠️, and write a prompt!
 
-## Requirements
+# Requirements
 
 - Unreal Engine 5.6
-- Python 3.11+ (bundled with UE)
+- A conda env for the web-server
 
-## License
-
-MIT
