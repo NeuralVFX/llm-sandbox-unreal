@@ -16,7 +16,7 @@ A small set of working agentic tools is provided with this, but thats not the po
 - **Code Execution** - All Code is executed directly in Unreal Engine
 - **LLM Execution** - Ask an LLM for help, with your code/errros in context
 - **Agentic Tool Use** - LLM can use tools directly in Unreal Engine
-- **User Tools** - Build and register custom agentic tools
+- **User Tools** - Build and register custom agentic tools instantly
 
 ## Installation
 
