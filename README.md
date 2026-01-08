@@ -77,7 +77,7 @@ def spawn_cube(location_x: float, location_y: float, location_z: float):
 - Run this in a `Code Cell`
 - Or create a new python file in your project's `Content/Python/tools` directory
 #### Tool Discovery:
-- Tools run in `Code Cells` are instantly availible to the LLM
+- Tools registered in `Code Cells` are instantly availible to the LLM
 - Tools added to `Content/Python/tools` are discovered on project restart
 #### To use:
 - Open a `Prmopt Cell`, Click 🛠️, and write a prompt!
