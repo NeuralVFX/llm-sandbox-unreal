@@ -4,6 +4,10 @@
 </p>
 A plugin for Unreal Engine that provides a Flask server for LLM-powered code execution directly in the editor.
 
+## What is This?
+#### This tool is Unreal component of a two componennt package:
+A web interface to Unreal Engine, which allows easy expirimentiation with Python, review of code and erros via LLM, and the creation and improvement of agentic tools directly from the interface. A set of working agentic tools is provided with this, but thats not the point. The idea is that this tool helps you build whatever custom agentic tools you need for your department, on your production!
+
 ## Features
 
 - **Code Execution** - All Code is executed directly in Unreal Engine
@@ -15,9 +19,13 @@ A plugin for Unreal Engine that provides a Flask server for LLM-powered code exe
 
 1. Copy the `LLMSandbox` folder to your project's `Plugins/` directory
 2. Restart Unreal Engine
-3. Go to `Edit → Plugins` and verify `LLM Sandbox` is enabled
-4. From the `LLM Sandbox Tools` menu, click `Install Dependencies`
-5. Restart Unreal Engine
+3. Go to `Edit → Plugins`, and Enable thes plugins:
+   - `Python Editor Script Plugin`
+   - `Python Foundation Packages`
+   - `LLM Sandbox`
+4. Restart Unreal Engine
+5. From the `LLM Sandbox Tools` menu, click `Install Dependencies`
+6. Restart Unreal Engine
 
 ### Web Interface
 
