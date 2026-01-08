@@ -10,11 +10,13 @@
   
 # What is this?
 
-A web-based coding/llm interface to Unreal Engine, which allows:
-- Easy expirimentation with Python
-- Review of code and code output/errors via LLM
-- Creation and iteration of agentic tools directly from the interface
-  
+An Unreal Engine plugin that exposes a Python execution server, enabling:
+- A web-based coding interface connected directly to Unreal
+- LLM-assisted code review with full context of your code and errors
+- Creation and deployment of agentic tools that operate inside the engine
+- 
+**This plugin is the Unreal-side component.** For the web interface, see [unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox).
+
 ## Features
 - **Code Execution** - All Code is executed directly in Unreal Engine
 - **LLM Execution** - Ask an LLM for help, with your code/errors in context
@@ -25,17 +27,19 @@ A web-based coding/llm interface to Unreal Engine, which allows:
 
 1. Copy the `LLMSandbox` folder to your project's `Plugins/` directory
 2. Restart Unreal Engine
-3. Go to `Edit → Plugins`, and Enable thes plugins:
+3. Go to `Edit → Plugins`, and enable the plugins:
    - `Python Editor Script Plugin`
    - `Python Foundation Packages`
    - `LLM Sandbox`
 4. Restart Unreal Engine
 5. From the `LLM Sandbox Tools` menu, click `Install Dependencies`
-6. Restart Unreal Engine
+   - Adds required python packages to the project (`flask`, `ipython`, `lisette`)
+7. Restart Unreal Engine
 
 # Web Interface
 
 Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)** to use `Web Browser` interface
+- The web interface is a standalone Jupyter-style notebook server that connects to Unreal over HTTP.
 
 ## Usage
 
@@ -83,7 +87,7 @@ def spawn_cube(location_x: float, location_y: float, location_z: float):
 - Tools registered in `Code Cells` are instantly availible to the LLM
 - Tools added to `Content/Python/tools` are discovered on project restart
 #### To use:
-- Open a `Prmopt Cell`, Click 🛠️, and write a prompt!
+- Open a `Prompt Cell`, Click the 🛠️ icon to activate Unreal tools, and write a prompt!
 
 # Requirements
 
