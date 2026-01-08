@@ -14,8 +14,6 @@ An Unreal Engine plugin that exposes a Python execution server, enabling:
 - A web-based coding interface connected directly to Unreal
 - LLM-assisted code review with full context of your code and errors
 - Creation and deployment of agentic tools that operate inside the engine
-- 
-**This plugin is the Unreal-side component.** For the web interface, see [unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox).
 
 ## Features
 - **Code Execution** - All Code is executed directly in Unreal Engine
