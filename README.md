@@ -3,8 +3,12 @@
   <img src="assets/demo.gif" alt="Demo">
 </p>
 
-#### This tool is the Unreal Engine component of a two component package:
-A web interface to Unreal Engine, which allows easy expirimentiation with Python, review of code and erros via LLM, and the creation and improvement of agentic tools directly from the interface. A set of working agentic tools is provided with this, but thats not the point. The idea is that this tool helps you build whatever custom agentic tools you need for your department, on your production!
+#### This tool is the Unreal Engine component of larger package:
+A web interface to Unreal Engine, which allows:
+- Easy expirimentiation with Python
+- Review of code and cout output/erros via LLM
+- Creation and iteration of agentic tools directly from the interfac
+A set of working agentic tools is provided with this, but thats not the point. The idea is that this tool helps you easily build whatever custom agentic tools you need for your department, on your production! With feedback directly from the LLM along the way.
 
 ## Features
 
