@@ -5,7 +5,7 @@
 
 #### This tool is the Unreal Engine component of larger package:
 A web interface to Unreal Engine, which allows:
-- Easy expirimentiation with Python
+- Easy expirimentation with Python
 - Review of code and cout output/erros via LLM
 - Creation and iteration of agentic tools directly from the interface
 #### Is the toolset complete?
