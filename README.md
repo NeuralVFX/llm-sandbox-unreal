@@ -1,29 +1,45 @@
 # Unreal LLM Sandbox
+
 <p align="center">
   <img src="assets/demo.gif" alt="Demo">
 </p>
-A plugin for Unreal Engine that provides a Flask server for LLM-powered code execution directly in the editor.
+
+#### This project has two components:
+- Web-Interface: [unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)
+- Unreal Plugin: [unreal-llm-sandbox-plugin](https://github.com/NeuralVFX/unreal-llm-sandbox-plugin)  <--- You are here
+  
+# What is this?
+
+An Unreal Engine plugin that exposes a Python execution server, enabling:
+- A web-based coding interface connected directly to Unreal
+- LLM-assisted code review with full context of your code and errors
+- Creation and deployment of agentic tools that operate inside the engine
 
 ## Features
-
 - **Code Execution** - All Code is executed directly in Unreal Engine
-- **LLM Execution** - Ask an LLM for help, with your code/errros in context
+- **LLM Execution** - Ask an LLM for help, with your code/errors in context
 - **Agentic Tool Use** - LLM can use tools directly in Unreal Engine
-- **User Tools** - Build and register custom agentic tools
+- **User Tools** - Build and register custom agentic tools instantly
 
-## Installation
+# Installation
 
 1. Copy the `LLMSandbox` folder to your project's `Plugins/` directory
 2. Restart Unreal Engine
-3. Go to `Edit → Plugins` and verify `LLM Sandbox` is enabled
-4. From the `LLM Sandbox Tools` menu, click `Install Dependencies`
-5. Restart Unreal Engine
+3. Go to `Edit → Plugins`, and enable the plugins:
+   - `Python Editor Script Plugin`
+   - `Python Foundation Packages`
+   - `LLM Sandbox`
+4. Restart Unreal Engine
+5. From the `LLM Sandbox Tools` menu, click `Install Dependencies`
+   - Adds required python packages to the project (`flask`, `ipython`, `lisette`)
+7. Restart Unreal Engine
 
-### Web Interface
+# Web Interface
 
 Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)** to use `Web Browser` interface
+- The web interface is a standalone Jupyter-style notebook server that connects to Unreal over HTTP.
 
-## Usage
+# Usage
 
 ### Starting the Server
 
@@ -40,12 +56,10 @@ The web app provides:
 - `Code Cells` - Write and executing Python code in Unreal
 - `Markdown Cells` - Write notes in Markdown
 - `LLM Prompt Cells` - Chat with LLMs that have full context of your notebook + agentic control of Unreal
-- `Agent Cells` - Agentic code generation with automatic unit testing and iteration
 
-### Registering Custom Agent Tools
+# Registering Custom Agent Tools
 
-Create a new python file in your project's `Content/Python/tools` directory:
-
+Syntax to register a new agentic tool:
 ```python
 
 @register_tool
@@ -64,13 +78,17 @@ def spawn_cube(location_x: float, location_y: float, location_z: float):
     # Your Unreal Python code here
     ...
 ```
-Tools are automatically discovered by LLM, and may be used via a `Prompt Cell`
+#### Either:
+- Run this in a `Code Cell`
+- Or create a new python file in your project's `Content/Python/tools` directory
+#### Tool Discovery:
+- Tools registered in `Code Cells` are instantly availible to the LLM
+- Tools added to `Content/Python/tools` are discovered on project restart
+#### To use:
+- Open a `Prompt Cell`, Click the 🛠️ icon to activate Unreal tools, and write a prompt!
 
-## Requirements
+# Requirements
 
 - Unreal Engine 5.6
-- Python 3.11+ (bundled with UE)
+- A conda env for the web-server
 
-## License
-
-MIT
