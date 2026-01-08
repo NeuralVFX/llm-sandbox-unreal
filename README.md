@@ -51,7 +51,6 @@ The web app provides:
 - `Code Cells` - Write and executing Python code in Unreal
 - `Markdown Cells` - Write notes in Markdown
 - `LLM Prompt Cells` - Chat with LLMs that have full context of your notebook + agentic control of Unreal
-- `Agent Cells` - Agentic code generation with automatic unit testing and iteration
 
 ### Registering Custom Agent Tools
 
