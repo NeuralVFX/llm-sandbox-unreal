@@ -7,7 +7,8 @@
 A web interface to Unreal Engine, which allows:
 - Easy expirimentiation with Python
 - Review of code and cout output/erros via LLM
-- Creation and iteration of agentic tools directly from the interfac
+- Creation and iteration of agentic tools directly from the interface
+#### Is the toolset complete?
 A set of working agentic tools is provided with this, but thats not the point. The idea is that this tool helps you easily build whatever custom agentic tools you need for your department, on your production! With feedback directly from the LLM along the way.
 
 ## Features
