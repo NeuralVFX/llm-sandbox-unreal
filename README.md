@@ -18,7 +18,7 @@ Not at all, a small set of working agentic tools is provided with this, but that
 ## Features
 
 - **Code Execution** - All Code is executed directly in Unreal Engine
-- **LLM Execution** - Ask an LLM for help, with your code/errros in context
+- **LLM Execution** - Ask an LLM for help, with your code/errors in context
 - **Agentic Tool Use** - LLM can use tools directly in Unreal Engine
 - **User Tools** - Build and register custom agentic tools instantly
 
