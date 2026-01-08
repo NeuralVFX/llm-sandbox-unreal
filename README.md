@@ -54,8 +54,7 @@ The web app provides:
 
 ### Registering Custom Agent Tools
 
-Create a new python file in your project's `Content/Python/tools` directory:
-
+Syntax to register a new agentic tool:
 ```python
 
 @register_tool
@@ -74,7 +73,14 @@ def spawn_cube(location_x: float, location_y: float, location_z: float):
     # Your Unreal Python code here
     ...
 ```
-Tools are automatically discovered by LLM, and may be used via a `Prompt Cell`
+#### Either:
+- Run this in a `Code Cell`
+- Or create a new python file in your project's `Content/Python/tools` directory
+#### Tool Discovery:
+- Tools run in `Code Cells` are instantly availible to the LLM
+- Tools added to `Content/Python/tools` are discovered on project restart
+#### To use:
+- Open a `Prmopt Cell`, Click 🛠️, and write a prompt!
 
 ## Requirements
 
