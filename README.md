@@ -2,14 +2,16 @@
 <p align="center">
   <img src="assets/demo.gif" alt="Demo">
 </p>
-
+### This project one piece of a two part system, this is the Unreal Plugin
+- Web-Interface: [unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)
+- Unreal Plugin: [unreal-llm-sandbox-plugin](https://github.com/NeuralVFX/unreal-llm-sandbox-plugin)  <--- You are here
 # What is this?
-A web interface to Unreal Engine, which allows:
+A web-based coding/llm interface to Unreal Engine, which allows:
 - Easy expirimentation with Python
-- Review of code and cout output/erros via LLM
+- Review of code and code output/errors via LLM
 - Creation and iteration of agentic tools directly from the interface
 ## Is the toolset complete?
-A small set of working agentic tools is provided with this, but thats not the point. The idea is that this tool helps you easily build whatever custom agentic tools you need for **your** department, on **your** production! With feedback directly from the LLM along the way.
+Not at all, a small set of working agentic tools is provided with this, but thats not the point. The idea is that this tool helps you easily build whatever custom agentic tools you need for **your** department, on **your** production!
 
 ## Features
 
