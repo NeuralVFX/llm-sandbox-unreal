@@ -62,27 +62,28 @@ The web app provides:
 Syntax to register a new agentic tool:
 ```python
 
-# SIMPLE TOOL — no patches needed
-
+# Simple tool - no patches needed
 @register_tool
-def get_camera_location() -> List[float]:
-    """Get the current editor camera position as [x, y, z]."""
-    # Your code here
+def spawn_cube(
+    x: float,  # X world coordinate
+    y: float,  # Y world coordinate
+    z: float   # Z world coordinate
+):
+    """Spawn a cube at the specified location."""
+    # Your implementation here
+    pass
 
-# ═══════════════════════════════════════════════════════════════
 
-# TOOL WITH PATCHES — for complex nested schemas
+# Tool with schema patch - enforces array constraints
+ACTOR_PATHS_PATCH = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
 
-# Reusable schema fragments
-ACTOR_PATHS = {"type": "array", "items": {"type": "string"}, "minItems": 1}
-
-@register_tool(patches={'actor_paths': ACTOR_PATHS})
-def destroy_actors(
-    actor_paths: List[str]  # Actor paths to delete
-) -> dict:
-    """Permanently delete actors from the world."""
-    # Your code here
-
+@register_tool(patches={'actor_paths': ACTOR_PATHS_PATCH})
+def delete_actors(
+    actor_paths: List[str]  # List of actor paths to delete
+):
+    """Delete the specified actors from the level."""
+    # Your implementation here
+    pass
 ```
 
 
