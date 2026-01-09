@@ -57,9 +57,9 @@ The web app provides:
 - `Markdown Cells` - Write notes in Markdown
 - `LLM Prompt Cells` - Chat with LLMs that have full context of your notebook + agentic control of Unreal
 
-# Registering Custom Agent Tools
+# Registering Custom Agentic Tools
 
-## Syntax to register a new agentic tool
+## Syntax to Register
 
 #### Simple Tool:
 ```python
