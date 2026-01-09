@@ -85,8 +85,8 @@ ACTOR_PATH_SCHEMA = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1
 
 @register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def move_actor_until_hit(
-    actor_paths: List[str], #REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
-    distance: float = 10000,
+    actor_paths: List[str], # REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
+    distance: float = 10000, # Distance above actor to shoot ray from
 ) -> List[dict]:
     """
     Drop actors onto surfaces below (or in any direction).
