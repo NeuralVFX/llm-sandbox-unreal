@@ -77,7 +77,24 @@ def spawn_cube(location_x: float, location_y: float, location_z: float):
     import unreal
     # Your Unreal Python code here
     ...
+
+# Or for special schemas:
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
+def move_actor_until_hit(
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
+    distance: float = 10000,
+    buffer_distance: float = 200.0,
+    direction: List[float] = [0, 0, -1],
+    set_rotation: bool = True, 
+) -> List[dict]:
+    """
+    Drop actors onto surfaces below (or in any direction).
+    
+    USE THIS WHEN:
 ```
+
+
+
 #### Either:
 - Run this in a `Code Cell`
 - Or create a new python file in your project's `Content/Python/tools` directory
