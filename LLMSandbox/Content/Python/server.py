@@ -12,10 +12,12 @@ import json
 import glob
 from flask import Flask, request, Response, jsonify
 from werkzeug.serving import make_server
+import litellm
 import importlib
 import os
 
 from tool_schema import *
+
 
 try:
     import unreal
@@ -40,7 +42,6 @@ def custom_showtraceback(exc_tuple=None, filename=None, tb_offset=None, exceptio
     pass  # Do nothing - we're handling tracebacks ourselves
 
 
-
 ####################################
 # TOOL REGISTRY (dynamic)
 ####################################
@@ -49,37 +50,48 @@ TOOLS = {}
 TOOL_SCHEMAS = []
 execution_queue = Queue()
 
-
-def register_tool(func_or_wrapper):
+def register_tool(patches=None,debug=True):
     """
     Register a function (or ToolSchema wrapper) as a tool.
     Supports both auto-generated schemas and custom pre-defined schemas.
     """
-    # 1. Determine if this is a custom wrapper or a raw function
-    if hasattr(func_or_wrapper, 'schema'):
-        # CASE A: Custom Schema (The wrapper 'knows' its own schema)
-        schema = func_or_wrapper.schema
-        # Ensure we use the wrapper name (proxied from original func)
-        name = func_or_wrapper.__name__
-        func_to_store = func_or_wrapper
-        unreal.log(f"Registering Custom Tool: {name}")
-    else:
-        # CASE B: Raw Function (Auto-generate schema)
-        name = func_or_wrapper.__name__
-        schema = lite_mk_func(func_or_wrapper)
-        func_to_store = func_or_wrapper
-        unreal.log(f"Registering Simple Tool: {name}")
+    def decorator(func):
 
-    # 2. Store the implementation
-    TOOLS[name] = func_to_store
-    shell.user_ns[name] = func_to_store
+        name = func.__name__
+        schema = lite_mk_func(func)
 
-    # 3. Register the Schema
-    # Remove old schema if exists
-    TOOL_SCHEMAS[:] = [s for s in TOOL_SCHEMAS if s['function']['name'] != name]
-    TOOL_SCHEMAS.append(schema)
-    
-    return func_or_wrapper
+        # Replace Schema pieces if needed
+        schema_good = True
+        if patches:
+            patch_schema(schema,patches)
+            if debug:
+                schema_good = schema_unit_test(schema)
+
+        if not schema_good:
+            print(f"Unable To Register, Bad Schema: {name}")
+            
+        else:
+            print(f"Registering Tool: {name}")
+
+            # Expose to shell namespace
+            TOOLS[name] = func
+            shell.user_ns[name] = func
+
+            # 3. Register the Schema
+            # Remove old schema if exists
+            TOOL_SCHEMAS[:] = [s for s in TOOL_SCHEMAS if s['function']['name'] != name]
+            TOOL_SCHEMAS.append(schema)
+            shell.user_ns['TOOL_SCHEMAS'] = TOOL_SCHEMAS
+        
+        return 
+
+    # Allows us to use the decorator without ()    
+    if callable(patches):
+        func = patches
+        patches = None # So this doenst get used in above func
+        return decorator(func)
+
+    return decorator
 
 
 ####################################
@@ -115,11 +127,6 @@ def load_tools(tools_dir):
             # --- INJECT DEPENDENCIES ---
             mod.register_tool = register_tool
             mod.shell = shell
-            mod.refine_schema = refine_schema
-            mod.refine_actor_list_param = refine_actor_list_param
-            mod.ToolSchema = ToolSchema
-            mod.VECTOR3 = VECTOR3
-            mod.VECTOR4 = VECTOR4
 
             # Execute
             spec.loader.exec_module(mod)

@@ -7,9 +7,56 @@ import random
 from pydantic import BaseModel, Field
 import re
 
-# ----------------------------
+#############################
+# JSON SCHEMA PATCHES
+#############################
+
+
+ACTOR_PATH_SCHEMA = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
+
+VECTOR3 = {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3, "description": "Vector3 [x, y, z]"}
+VECTOR4 = {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4, "description": "Vector4 [x, y, z, w]"}
+
+actor_path = {'actor_path': {'type': 'string'}, 'location': VECTOR3,'quaternion': VECTOR4, 'scale':VECTOR3} 
+
+ACTOR_TRANSFORMS_SCHEMA = {'type': 'array',
+                         'description': '',
+                          'items': {'type': 'object',
+                                     'properties': actor_path,
+                                     'required': ['actor_path', 'location', 'quaternion', 'scale']}}
+
+
+asset_path = {'asset_path': {'type': 'string'}, 'location': VECTOR3,'quaternion': VECTOR4, 'scale':VECTOR3} 
+
+SPAWN_ACTOR_TRANSFORMS_SCHEMA = {'type': 'array',
+                         'description': '',
+                          'items': {'type': 'object',
+                                     'properties': asset_path,
+                                     'required': ['asset_path', 'location', 'quaternion', 'scale']}}
+
+##############################
+# Library Helpers
+##############################
+
+def _asset_data_to_object_path(ad):
+    package_name = str(ad.package_name)  # "/Game/Path/Asset"
+    asset_name = str(ad.asset_name)      # "Asset"
+    return f"{package_name}.{asset_name}"
+
+
+def _get_static_mesh_from_component(smc):
+    # UE 5.6 Python: prefer editor property access
+    mesh = smc.get_editor_property("static_mesh")
+    return mesh
+
+
+def _set_static_mesh_on_component(smc, mesh):
+    smc.set_editor_property("static_mesh", mesh)
+    
+
+##############################
 # Vector / Math helpers
-# ----------------------------
+##############################
 
 def _resolve_actor_paths(
     actor_paths: Optional[List[str]] = None,
@@ -117,7 +164,7 @@ def _component_world_transform(component) -> unreal.Transform:
         return component.get_world_transform()
     return component.get_editor_property("world_transform")
 
-# ----------------------------
+#######################################
 # HitResult parsing (UE 5.6 Python binding: use to_tuple())
 # Observed tuple layout (len=18):
 # 0 blocking_hit(bool)
@@ -129,7 +176,7 @@ def _component_world_transform(component) -> unreal.Transform:
 # 10 component(Component)
 # 16 trace_start(Vector)
 # 17 trace_end(Vector)
-# ----------------------------
+#########################################
 
 def _hitresult_tuple(hit) -> Optional[tuple]:
     if hit is None:
@@ -138,11 +185,13 @@ def _hitresult_tuple(hit) -> Optional[tuple]:
         return hit.to_tuple()
     return None
 
+
 def _hitresult_blocking(hit) -> bool:
     t = _hitresult_tuple(hit)
     if not t or len(t) < 1:
         return False
     return bool(t[0])
+
 
 def _hitresult_location(hit) -> Optional[unreal.Vector]:
     t = _hitresult_tuple(hit)
@@ -153,6 +202,7 @@ def _hitresult_location(hit) -> Optional[unreal.Vector]:
             return t[idx]
     return None
 
+
 def _hitresult_normal(hit) -> Optional[unreal.Vector]:
     t = _hitresult_tuple(hit)
     if not t:
@@ -161,6 +211,7 @@ def _hitresult_normal(hit) -> Optional[unreal.Vector]:
         if len(t) > idx and isinstance(t[idx], unreal.Vector):
             return t[idx]
     return None
+
 
 def _hitresult_actor(hit):
     t = _hitresult_tuple(hit)
@@ -172,9 +223,9 @@ def _hitresult_actor(hit):
         return t[10].get_owner()
     return None
 
-# ----------------------------
+##############################
 # Collision / trace helpers
-# ----------------------------
+##############################
 
 def _sanitize_ignore_actors(ignore_actors) -> List[unreal.Actor]:
     clean = []
@@ -184,6 +235,7 @@ def _sanitize_ignore_actors(ignore_actors) -> List[unreal.Actor]:
         if a and isinstance(a, unreal.Actor):
             clean.append(a)
     return clean
+
 
 def _resolve_trace_type_query(trace_channel: str):
     tc = (trace_channel or "Visibility").strip().lower()
@@ -210,6 +262,7 @@ def _resolve_trace_type_query(trace_channel: str):
 
     return None
 
+
 def _force_collision_refresh(actor: unreal.Actor) -> bool:
     if not actor:
         return False
@@ -233,9 +286,6 @@ def _force_collision_refresh(actor: unreal.Actor) -> bool:
 
     return True
 
-# ----------------------------
-# Main tool
-# ----------------------------
 
 def ray_cast_array(
     rays: List[dict] = [],
@@ -378,11 +428,89 @@ def ray_cast_array(
 
     return results
 
+#################################
+# Bounding Box Helpers
+#################################
 
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
-def move_actor_until_hit(
+def _gather_actor_bounds(
+    world,
     actor_paths: List[str],
+    include_child_actors: bool
+) -> Tuple[List[unreal.Actor], np.ndarray, np.ndarray]:
+    """
+    Gather one AABB per Actor (via Actor.get_actor_bounds).
+
+    Narrowing behavior:
+      - If actor_paths is a non-empty list: resolve those actors by path and only use those.
+      - If actor_paths is empty (or None): gather *all* actors in the level.
+
+    Args:
+        world: editor world
+        actor_paths: list of full actor object paths (actor.get_path_name()).
+                     If empty/None => all actors.
+        only_colliding: passed to get_actor_bounds
+        include_child_actors: passed to get_actor_bounds
+
+    Returns:
+        actors: list[unreal.Actor]
+        centers: (N,3) float64
+        extents: (N,3) float64
+    """
+    if actor_paths:
+        actors: List[unreal.Actor] = []
+        for p in actor_paths:
+            a = unreal.find_object(None, p)
+            if not a:
+                unreal.log_warning(f"_gather_actor_bounds: Could not resolve actor: {p}")
+                continue
+            # ensure it's an Actor
+            if not isinstance(a, unreal.Actor):
+                unreal.log_warning(f"_gather_actor_bounds: Object is not an Actor: {p} ({a.get_class().get_name()})")
+                continue
+            actors.append(a)
+    else:
+        actors = unreal.GameplayStatics.get_all_actors_of_class(world, unreal.Actor)
+
+    centers = np.empty((len(actors), 3), dtype=np.float64)
+    extents = np.empty((len(actors), 3), dtype=np.float64)
+
+    for i, a in enumerate(actors):
+        c, e = a.get_actor_bounds(False, include_child_actors)
+        centers[i] = _v3_to_np(c)
+        extents[i] = _v3_to_np(e)
+
+    return actors, centers, extents
+
+
+def _aabb_corners_from_center_extent(centers, extents):
+    signs = np.array([
+        [-1,-1,-1], [-1,-1, 1], [-1, 1,-1], [-1, 1, 1],
+        [ 1,-1,-1], [ 1,-1, 1], [ 1, 1,-1], [ 1, 1, 1],
+    ], dtype=np.float64)
+    return centers[:, None, :] + extents[:, None, :] * signs[None, :, :]
+
+
+def _transform_to_dict(xform: unreal.Transform) -> dict:
+    t = xform.translation
+    q = xform.rotation
+    s = xform.scale3d
+    return {
+        "location": {"x": float(t.x), "y": float(t.y), "z": float(t.z)},
+        "quat": {"x": float(q.x), "y": float(q.y), "z": float(q.z), "w": float(q.w)},
+        "scale": {"x": float(s.x), "y": float(s.y), "z": float(s.z)},
+    }
+
+
+#########################################
+#########################################
+# Register Agentic Tools
+#########################################
+#########################################
+
+
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
+def move_actor_until_hit(
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
     distance: float = 10000,
     buffer_distance: float = 200.0,
     direction: List[float] = [0, 0, -1],
@@ -512,79 +640,6 @@ def move_actor_until_hit(
     return moved
 
     
-def _gather_actor_bounds(
-    world,
-    actor_paths: List[str],
-    include_child_actors: bool
-) -> Tuple[List[unreal.Actor], np.ndarray, np.ndarray]:
-    """
-    Gather one AABB per Actor (via Actor.get_actor_bounds).
-
-    Narrowing behavior:
-      - If actor_paths is a non-empty list: resolve those actors by path and only use those.
-      - If actor_paths is empty (or None): gather *all* actors in the level.
-
-    Args:
-        world: editor world
-        actor_paths: list of full actor object paths (actor.get_path_name()).
-                     If empty/None => all actors.
-        only_colliding: passed to get_actor_bounds
-        include_child_actors: passed to get_actor_bounds
-
-    Returns:
-        actors: list[unreal.Actor]
-        centers: (N,3) float64
-        extents: (N,3) float64
-    """
-    if actor_paths:
-        actors: List[unreal.Actor] = []
-        for p in actor_paths:
-            a = unreal.find_object(None, p)
-            if not a:
-                unreal.log_warning(f"_gather_actor_bounds: Could not resolve actor: {p}")
-                continue
-            # ensure it's an Actor
-            if not isinstance(a, unreal.Actor):
-                unreal.log_warning(f"_gather_actor_bounds: Object is not an Actor: {p} ({a.get_class().get_name()})")
-                continue
-            actors.append(a)
-    else:
-        actors = unreal.GameplayStatics.get_all_actors_of_class(world, unreal.Actor)
-
-    centers = np.empty((len(actors), 3), dtype=np.float64)
-    extents = np.empty((len(actors), 3), dtype=np.float64)
-
-    for i, a in enumerate(actors):
-        c, e = a.get_actor_bounds(False, include_child_actors)
-        centers[i] = _v3_to_np(c)
-        extents[i] = _v3_to_np(e)
-
-    return actors, centers, extents
-
-
-def _aabb_corners_from_center_extent(centers, extents):
-    signs = np.array([
-        [-1,-1,-1], [-1,-1, 1], [-1, 1,-1], [-1, 1, 1],
-        [ 1,-1,-1], [ 1,-1, 1], [ 1, 1,-1], [ 1, 1, 1],
-    ], dtype=np.float64)
-    return centers[:, None, :] + extents[:, None, :] * signs[None, :, :]
-
-
-def _transform_to_dict(xform: unreal.Transform) -> dict:
-    t = xform.translation
-    q = xform.rotation
-    s = xform.scale3d
-    return {
-        "location": {"x": float(t.x), "y": float(t.y), "z": float(t.z)},
-        "quat": {"x": float(q.x), "y": float(q.y), "z": float(q.z), "w": float(q.w)},
-        "scale": {"x": float(s.x), "y": float(s.y), "z": float(s.z)},
-    }
-
-
-################################
-# Look at actual scene geomotry
-################################
-
 @register_tool
 def look_at_scene_depth(
    # forwards to ray_cast_array by temporarily toggling inside it? (see note below)
@@ -685,10 +740,6 @@ def look_at_scene_depth(
 
     return out
 
-
-##############################
-# View Actors Screenspace
-############################## 
 
 @register_tool
 def view_actors_screenspace(max_results: int = 5000) -> List[Dict[str, Any]]:
@@ -813,72 +864,9 @@ def view_actors_screenspace(max_results: int = 5000) -> List[Dict[str, Any]]:
     return results
 
 
-############################
-# Uber viewport view
-############################
-
-def analyze_viewport(max_actor_results: int = 5000) -> Dict[str, Any]:
-    """
-    Complete viewport analysis: what actors are visible AND what geometry is in view.
-    
-    USE THIS WHEN:
-    - User asks "what do you see" or "describe the scene"
-    - Need both actor-level info AND geometric depth/surface data
-    - Starting point for understanding an unfamiliar scene
-    - User wants comprehensive situational awareness
-    
-    This combines two analyses:
-    1. ACTORS: Which actors are in the camera frustum (fast, bounding-box based)
-    2. GEOMETRY: Ray-traced depth samples showing actual surfaces (slower, more precise)
-    
-    Use the individual tools if you only need one:
-    - view_actors_screenspace() — just actors, faster
-    - look_at_scene_geometry() — just geometry rays, slower
-    
-    Args:
-        max_actor_results: Maximum actors to return (sorted by angle from view center).
-    
-    Returns:
-        dict with two keys:
-        
-        "actors": List of visible actors, each with:
-            - actor_path: Full path for unreal.find_object()
-            - is_selected: bool
-            - ndc_xy: [x, y] screen position in [-1..1]
-            - depth: Distance along camera forward axis (cm)
-            - angle_from_center_deg: How far from screen center (0 = dead center)
-            
-        "geometry": Grid of ray hits from camera, each with:
-            - hit_location: [x, y, z] world position
-            - hit_normal: [x, y, z] surface normal
-            - hit_actor_path: What actor was hit (if any)
-            - ndc_xy: [x, y] screen position of this ray
-            - ij: [col, row] grid coordinates
-            - distance_from_camera_cm: Depth to hit point
-            - deg_from_view_center: Angle from screen center
-            
-    Example response interpretation:
-        - actors with small angle_from_center_deg are near crosshair
-        - geometry samples with similar distance_from_camera_cm form a surface
-        - gaps in geometry grid indicate sky/empty space
-    """
-    actors_result = view_actors_screenspace(max_results=max_actor_results)
-    geometry_result = look_at_scene_geometry()
-    
-    return {
-        "actors": actors_result,
-        "geometry": geometry_result,
-    }
-
-##############################
-# Get Actor Transforms
-##############################
-
-
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def get_actor_transforms(
-    actor_paths: list[str],
+    actor_paths: list[str], #REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
 
 ) -> dict:
     """
@@ -978,9 +966,9 @@ def get_actor_transforms(
     return results
 
 
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
-def randomize_position(actor_paths: List[str],radius: float=200.0):
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
+def randomize_position(actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
+                        radius: float=200.0):
     """
     Randomize positions of existing actors within a spherical radius.
     
@@ -1043,11 +1031,9 @@ def randomize_position(actor_paths: List[str],radius: float=200.0):
     return results
     
 
-
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def randomize_scale_percent(
-    actor_paths: List[str],
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
     percent: float,
 ) -> List[Dict[str, Any]]:
     """
@@ -1108,10 +1094,10 @@ def randomize_scale_percent(
 
     return results
       
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
+
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def randomize_rotation(
-    actor_paths: List[str],
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
     roll_mult: float,
     pitch_mult: float,
     yaw_mult: float,
@@ -1187,10 +1173,9 @@ def randomize_rotation(
     return results
 
 
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def scatter_replicate(
-    actor_paths: List[str],
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
     duplicates_per_actor: int = 5,
     radius: float = 200.0,
 ) -> List[Dict[str, Any]]:
@@ -1265,10 +1250,10 @@ def scatter_replicate(
 
     return results
 
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
+
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def destroy_actors(
-    actor_paths: List[str],
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
 ) -> dict:
     """
     Permanently deletes multiple actors from the world using their full path names.
@@ -1303,18 +1288,8 @@ def destroy_actors(
         
     return {"success_count": success_count, "failed_count": len(failed_paths), "failed_paths": failed_paths}
 
-# ----------------------------
-# Tool
-# ----------------------------
 
-
-@register_tool
-@refine_schema("actor_transforms", item_schema={
-    "asset_path": {"type": "string"},
-    "location": VECTOR3,
-    "quaternion": VECTOR4,
-    "scale": VECTOR3,
-})
+@register_tool(patches={'actor_transforms': SPAWN_ACTOR_TRANSFORMS_SCHEMA})
 def spawn_actors(
     actor_transforms: list,
     base_name: str,
@@ -1376,13 +1351,7 @@ def spawn_actors(
     return spawned
 
     
-@register_tool
-@refine_schema("actor_transform_updates", item_schema={
-    "actor_path": {"type": "string"},
-    "location": VECTOR3,
-    "quaternion": VECTOR4,
-    "scale": VECTOR3
-})
+@register_tool(patches={'actor_transform_updates': ACTOR_TRANSFORMS_SCHEMA})
 def update_actors_transforms(
     actor_transform_updates: list
 ) -> List[str]:
@@ -1450,13 +1419,10 @@ def update_actors_transforms(
                 
     return updated_paths
 
-from typing import List, Dict
 
-
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def space_apart_intersecting_actors(
-    actor_paths: List[str],
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
 
 ) -> str:
     """
@@ -1572,10 +1538,9 @@ def space_apart_intersecting_actors(
     return actors_moved
 
 
-@register_tool
-@refine_actor_list_param("actor_paths", min_items=1, required=True)
+@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def clump_actors(
-    actor_paths: List[str],
+    actor_paths: List[str],#REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
     attract_radius: float = 900.0,
     iterations: int = 100,
     radius_mult: float = 1.0,
@@ -1680,9 +1645,6 @@ def clump_actors(
 
     return actors_moved
 
-# ----------------------------
-# Tools
-# ----------------------------
 
 @register_tool
 def find_actors(
@@ -1786,20 +1748,6 @@ def find_actors(
 
     return out
 
-
-def _asset_data_to_object_path(ad):
-    package_name = str(ad.package_name)  # "/Game/Path/Asset"
-    asset_name = str(ad.asset_name)      # "Asset"
-    return f"{package_name}.{asset_name}"
-
-def _get_static_mesh_from_component(smc):
-    # UE 5.6 Python: prefer editor property access
-    mesh = smc.get_editor_property("static_mesh")
-    return mesh
-
-def _set_static_mesh_on_component(smc, mesh):
-    smc.set_editor_property("static_mesh", mesh)
-    
 
 @register_tool
 def find_all_static_meshes_in_library(include_engine_content:bool=False, include_plugin_content:bool=False):
