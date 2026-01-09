@@ -75,7 +75,7 @@ def spawn_cube(
     pass
 ```
 
-#### Tool with Specific Schema overrides: 
+#### Tool with specific Schema overrides: 
 ```python
 # Tool with schema patch - enforces array constraints
 ACTOR_PATHS_PATCH = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
@@ -89,8 +89,6 @@ def delete_actors(
     pass
 ```
 
-
-
 #### Either:
 - Run this in a `Code Cell`
 - Or create a new python file in your project's `Content/Python/tools` directory
@@ -99,6 +97,24 @@ def delete_actors(
 - Tools added to `Content/Python/tools` are discovered on project restart
 #### To use:
 - Open a `Prompt Cell`, Click the 🛠️ icon to activate Unreal tools, and write a prompt!
+
+## View the tool Schema
+Schemas are stored in a global variable `TOOL_SCHEMAS`, printing it should show something like:
+```json
+{'type': 'function',
+  'function': {'name': 'move_actor_until_hit',
+   'description': '\n    Drop actors onto surfaces below (or in any direction).\n    \n    USE THIS WHEN:\n    - User says "drop to floor", "place on ground", "snap to surface"\n    - Aligning objects to terrain or other geometry\n    - User wants objects to "sit" on something naturally\n    \n    Optionally rotates actor to match surface normal (good for organic placement).\n\n    Args:\n        actor_paths:\n            List of Actor UObject paths to raycast from and potentially move.\n\n        distance:\n            Trace length in centimeters.\n\n        buffer_distance:\n            Start the ray from N units behind the object ( usefull in case object is already slightly under terrain )\n\n        direction:\n            World-space direction vector [x,y,z]. Does not need to be normalized.\n\n        set_rotation:\n            If True, apply the computed quaternion to the actor rotation so that local +Z\n            aligns to the hit normal (twist stabilized using the actor\'s Y axis).\n            If False, only the actor location is updated.\n\n    Returns:\n        List[dict]: One entry per actor that was successfully moved (and possibly rotated):\n\n            {\n              "actor_path": str,\n              "actor_label": str,\n              "transform": {\n                  "location": [x,y,z],\n                  "quat": [qx,qy,qz,qw]\n              }\n            }\n    \n\nReturns:\n- type: object',
+   'parameters': {'type': 'object',
+    'properties': {'actor_paths': {'type': 'array',
+      'description': 'REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.',
+      'items': {'type': 'string'},
+      'minItems': 1},
+     'distance': {'type': 'number', 'description': '', 'default': 10000},
+     'buffer_distance': {'type': 'number',
+      'description': '',
+...
+```
+
 
 # Requirements
 
