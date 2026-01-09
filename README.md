@@ -59,7 +59,9 @@ The web app provides:
 
 # Registering Custom Agent Tools
 
-Syntax to register a new agentic tool:
+## Syntax to register a new agentic tool
+
+#### Simple Tool:
 ```python
 
 # Simple tool - no patches needed
@@ -72,8 +74,10 @@ def spawn_cube(
     """Spawn a cube at the specified location."""
     # Your implementation here
     pass
+```
 
-
+#### Tool with Specific Schema overrides: 
+```
 # Tool with schema patch - enforces array constraints
 ACTOR_PATHS_PATCH = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
 
