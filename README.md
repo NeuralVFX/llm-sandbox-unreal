@@ -63,7 +63,9 @@ Syntax to register a new agentic tool:
 ```python
 
 @register_tool
-def spawn_cube(location_x: float, location_y: float, location_z: float):
+def spawn_cube(location_x: float, # X Transform Coordinate
+               location_y: float, # Y Transform Coordinate
+               location_z: float): # Z Transform Coordinate
     """Spawn a cube at the specified world location.
     
     Args:
