@@ -62,37 +62,26 @@ The web app provides:
 Syntax to register a new agentic tool:
 ```python
 
+# SIMPLE TOOL — no patches needed
+
 @register_tool
-def spawn_cube(location_x: float, # X Transform Coordinate
-               location_y: float, # Y Transform Coordinate
-               location_z: float): # Z Transform Coordinate
-    """Spawn a cube at the specified world location.
-    
-    Args:
-        location_x: X coordinate
-        location_y: Y coordinate  
-        location_z: Z coordinate
-    
-    Returns:
-        Name of the spawned actor
-    """
-    # Your Unreal Python code here
+def get_camera_location() -> List[float]:
+    """Get the current editor camera position as [x, y, z]."""
+    # Your code here
 
+# ═══════════════════════════════════════════════════════════════
 
-# Or for special schemas:
+# TOOL WITH PATCHES — for complex nested schemas
 
-ACTOR_PATH_SCHEMA = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
+# Reusable schema fragments
+ACTOR_PATHS = {"type": "array", "items": {"type": "string"}, "minItems": 1}
 
-@register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
-def move_actor_until_hit(
-    actor_paths: List[str], # REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
-    distance: float = 10000, # Distance above actor to shoot ray from
-) -> List[dict]:
-    """
-    Drop actors onto surfaces below (or in any direction).
-    
-    """
-    # Your Unreal Python code here
+@register_tool(patches={'actor_paths': ACTOR_PATHS})
+def destroy_actors(
+    actor_paths: List[str]  # Actor paths to delete
+) -> dict:
+    """Permanently delete actors from the world."""
+    # Your code here
 
 ```
 
