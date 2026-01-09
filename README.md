@@ -63,7 +63,6 @@ The web app provides:
 
 #### Simple Tool:
 ```python
-
 # Simple tool - no patches needed
 @register_tool
 def spawn_cube(
@@ -77,7 +76,7 @@ def spawn_cube(
 ```
 
 #### Tool with Specific Schema overrides: 
-```
+```python
 # Tool with schema patch - enforces array constraints
 ACTOR_PATHS_PATCH = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
 
