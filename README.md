@@ -95,7 +95,7 @@ def delete_actors(
 #### Tool Discovery:
 - Tools registered in `Code Cells` are instantly availible to the LLM
 - Tools added to `Content/Python/tools` are discovered on project restart
-#### To use:
+## To use:
 - Open a `Prompt Cell`, Click the 🛠️ icon to activate Unreal tools, and write a prompt!
 
 ## View the tool Schema
