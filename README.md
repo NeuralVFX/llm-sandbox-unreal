@@ -79,6 +79,8 @@ def spawn_cube(location_x: float, location_y: float, location_z: float):
 
 # Or for special schemas:
 
+ACTOR_PATH_SCHEMA = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
+
 @register_tool(patches={'actor_paths': ACTOR_PATH_SCHEMA})
 def move_actor_until_hit(
     actor_paths: List[str], #REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.
