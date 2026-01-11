@@ -45,7 +45,7 @@ Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)*
 
 From the menu bar:
 `LLM Sandbox → Start Server`
-- The server runs at `http://127.0.0.1:8765`
+- The server runs at `http://127.0.0.1:5002`
   
 ### Starting the Web Interface
 - Start `unreal-llm-sandbox` from command line ( outside of Unreal )
