@@ -309,29 +309,6 @@ def execute():
         }
     )
 
-@app.route('/execute_sync', methods=['POST'])
-def execute_sync():
-    global task
-    global queue
-    
-    code = request.json.get('code', '')
-    request_id = str(uuid.uuid4())
-    queue = Queue()
-    code_outputs[request_id] = queue
-    task = (request_id, code)
-    while task is not None:  # Wait for tick_executor to process
-        time.sleep(0.01)
-    messages = []
-    while True:
-        msg = queue.get(timeout=30)
-        if msg is None:
-            break
-        messages.append(msg)
-
-    code_outputs.pop(request_id, None)
-    return flask.jsonify({'messages': messages})
-
-
 
 load_tools(os.path.join(os.path.dirname(__file__), "default_tools"))  # Plugin tools
 load_tools(os.path.join(unreal.Paths.project_content_dir(), "Python", "tools"))  # User tools
@@ -363,7 +340,7 @@ def register_callback():
         unreal._ipy_hnd = unreal.register_slate_pre_tick_callback(tick_executor)
 
         # Create and Store Server
-        server = make_server('127.0.0.1',8765,app)
+        server = make_server('127.0.0.1',5002,app)
         unreal._flask_server = server
 
         # Start Serve in Thread
