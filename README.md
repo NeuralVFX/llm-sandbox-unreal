@@ -45,7 +45,7 @@ Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)*
 
 From the menu bar:
 `LLM Sandbox → Start Server`
-- The server runs at `http://127.0.0.1:8765`
+- The server runs at `http://127.0.0.1:5002`
   
 ### Starting the Web Interface
 - Start `unreal-llm-sandbox` from command line ( outside of Unreal )
@@ -57,9 +57,9 @@ The web app provides:
 - `Markdown Cells` - Write notes in Markdown
 - `LLM Prompt Cells` - Chat with LLMs that have full context of your notebook + agentic control of Unreal
 
-# Registering Custom Agent Tools
+# Registering Custom Agentic Tools
 
-## Syntax to register a new agentic tool
+## Syntax to Register
 
 #### Simple Tool:
 ```python
@@ -75,7 +75,7 @@ def spawn_cube(
     pass
 ```
 
-#### Tool with Specific Schema overrides: 
+#### Tool with specific Schema overrides: 
 ```python
 # Tool with schema patch - enforces array constraints
 ACTOR_PATHS_PATCH = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
@@ -89,16 +89,31 @@ def delete_actors(
     pass
 ```
 
-
-
 #### Either:
 - Run this in a `Code Cell`
 - Or create a new python file in your project's `Content/Python/tools` directory
 #### Tool Discovery:
 - Tools registered in `Code Cells` are instantly availible to the LLM
 - Tools added to `Content/Python/tools` are discovered on project restart
-#### To use:
+## To use:
 - Open a `Prompt Cell`, Click the 🛠️ icon to activate Unreal tools, and write a prompt!
+
+## View the tool Schema
+Schemas are stored in a global variable `TOOL_SCHEMAS`, printing it should show something like:
+```python
+[{'type': 'function',
+  'function': {'name': 'move_actor_until_hit',
+   'description': '\n    Drop actors onto surfaces below (or in any direction).\n ',
+   'parameters': {'type': 'object',
+    'properties': {'actor_paths': {'type': 'array',
+      'description': 'REQUIRED. Non-empty list of Actor UObject paths (strings). Never pass an empty list.',
+      'items': {'type': 'string'},
+      'minItems': 1},
+     'distance': {'type': 'number', 'description': '', 'default': 10000},
+     'buffer_distance': {'type': 'number',
+      'description': '',
+...
+```
 
 # Requirements
 
