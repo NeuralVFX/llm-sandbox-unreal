@@ -15,6 +15,8 @@ from werkzeug.serving import make_server
 import litellm
 import importlib
 import os
+import importlib.util
+import types
 
 from tool_schema import *
 
@@ -83,7 +85,7 @@ def register_tool(patches=None,debug=True):
             TOOL_SCHEMAS.append(schema)
             shell.user_ns['TOOL_SCHEMAS'] = TOOL_SCHEMAS
         
-        return 
+        return func
 
     # Allows us to use the decorator without ()    
     if callable(patches):
@@ -98,45 +100,40 @@ def register_tool(patches=None,debug=True):
 # Register Default Tools / Find User Added Tools
 ####################################
 
-def load_tools(tools_dir):
+
+def load_tools(tools_dir: str):
     os.makedirs(tools_dir, exist_ok=True)
-    
-    for f in glob.glob(os.path.join(tools_dir, "*.py")):
-        filename = os.path.basename(f)
-        module_name = filename[:-3]  # Strip .py extension to get a clean module name
-        
-        # SKIP definitions files or __init__
-        if filename.startswith("_") or filename.startswith("__"): 
+
+    for path in glob.glob(os.path.join(tools_dir, "*.py")):
+        fname = os.path.basename(path)
+        if fname.startswith(("_", "__")):
             continue
 
-        # --- RELOAD LOGIC ---
-        # Check if we've seen this module before
-        if module_name in sys.modules:
-            # Force remove it from cache so we get a fresh execution
-            del sys.modules[module_name]
-            unreal.log(f"Reloading existing module: {module_name}")
+        mod_name = os.path.splitext(fname)[0]
+        sys.modules.pop(mod_name, None)
 
         try:
-            # Create spec and module
-            spec = importlib.util.spec_from_file_location(module_name, f)
+            spec = importlib.util.spec_from_file_location(mod_name, path)
             mod = importlib.util.module_from_spec(spec)
-            
-            # Register it in sys.modules manually (important for relative imports inside tools)
-            sys.modules[module_name] = mod
-            
-            # --- INJECT DEPENDENCIES ---
+            sys.modules[mod_name] = mod
+
             mod.register_tool = register_tool
             mod.shell = shell
 
-            # Execute
             spec.loader.exec_module(mod)
-            unreal.log(f"Successfully loaded: {filename}")
-            
+
+            for name, obj in vars(mod).items():
+                if name.startswith("__"):
+                    continue
+                if isinstance(obj, types.FunctionType):
+                    shell.user_ns[name] = obj
+
+            unreal.log(f"Loaded tools: {fname}")
+
         except Exception as e:
-            unreal.log_error(f"Failed to load {filename}: {e}")
-            # Clean up broken module so next reload tries again
-            if module_name in sys.modules:
-                del sys.modules[module_name]
+            sys.modules.pop(mod_name, None)
+            unreal.log_error(f"Failed to load {fname}: {e}")
+
 
 shell.user_ns['register_tool'] = register_tool
 
