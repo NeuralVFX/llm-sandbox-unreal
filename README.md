@@ -5,9 +5,9 @@
 </p>
 
 #### This project has two components:
-- Web-Interface: [unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)
-- Unreal Plugin: [unreal-llm-sandbox-plugin](https://github.com/NeuralVFX/unreal-llm-sandbox-plugin)  <--- You are here
-  
+- Web-Interface: [llm-sandbox-ui](https://github.com/NeuralVFX/llm-sandbox-ui)  
+- Unreal Plugin: [llm-sandbox-unreal](https://github.com/NeuralVFX/llm-sandbox-unreal)  <--- You are here
+- 
 # What is this?
 
 An Unreal Engine plugin that exposes a Python execution server, enabling:
@@ -36,7 +36,7 @@ An Unreal Engine plugin that exposes a Python execution server, enabling:
 
 # Web Interface
 
-Install **[unreal-llm-sandbox](https://github.com/NeuralVFX/unreal-llm-sandbox)** to use `Web Browser` interface
+Install **[llm-sandbox-ui](https://github.com/NeuralVFX/llm-sandbox-ui)** to use `Web Browser` interface
 - The web interface is a standalone Jupyter-style notebook server that connects to Unreal over HTTP.
 
 # Usage
