@@ -104,36 +104,36 @@ def register_tool(patches=None,debug=True):
 def load_tools(tools_dir: str):
     os.makedirs(tools_dir, exist_ok=True)
 
+    # 1. Ensure the registry dict exists in the notebook too, 
+    #    so the decorator can write to it visibly.
+    if 'TOOLS' not in shell.user_ns:
+        shell.user_ns['TOOLS'] = TOOLS
+
     for path in glob.glob(os.path.join(tools_dir, "*.py")):
         fname = os.path.basename(path)
         if fname.startswith(("_", "__")):
             continue
 
-        mod_name = os.path.splitext(fname)[0]
-        sys.modules.pop(mod_name, None)
+        print(f"Loading Script: {fname}")
+
+        with open(path, 'r') as f:
+            code_content = f.read()
 
         try:
-            spec = importlib.util.spec_from_file_location(mod_name, path)
-            mod = importlib.util.module_from_spec(spec)
-            sys.modules[mod_name] = mod
-
-            mod.register_tool = register_tool
-            mod.shell = shell
-
-            spec.loader.exec_module(mod)
-
-            for name, obj in vars(mod).items():
-                if name.startswith("__"):
-                    continue
-                if isinstance(obj, types.FunctionType):
-                    shell.user_ns[name] = obj
-
-            unreal.log(f"Loaded tools: {fname}")
-
+            # Compile first to attach the filename path
+            # 'exec' mode tells Python this is a suite of statements
+            code_obj = compile(code_content, path, 'exec')
+            
+            # Execute the compiled object (which now has metadata)
+            exec(code_obj, shell.user_ns) 
+            
+            unreal.log(f"Injected tool script: {fname}")
+            
         except Exception as e:
-            sys.modules.pop(mod_name, None)
-            unreal.log_error(f"Failed to load {fname}: {e}")
-
+            # This will likely show you the "inspect" error if it still fails
+            unreal.log_error(f"Failed to inject {fname}: {e}")
+            import traceback
+            traceback.print_exc() # Prin
 
 shell.user_ns['register_tool'] = register_tool
 
@@ -216,7 +216,7 @@ def tick_executor(delta_time):
 
         # Lets Swap the TraceBack ( Or We Get Duplicate in STDOUT )
         old_showtraceback = shell.showtraceback
-        shell.showtraceback = custom_showtraceback  # Add this line here
+        shell.showtraceback = custom_showtraceback  
         old_showsyntaxerror = shell.showsyntaxerror
         shell.showsyntaxerror = custom_showsyntaxerror
 
@@ -281,21 +281,21 @@ def execute():
     code_outputs[request_id] = queue
     task = (request_id, code)
     
-    unreal.log(f"🎬 Starting generator for {request_id}")  # ← Add this
+    unreal.log(f"🎬 Starting generator for {request_id}") 
     
     def generate():
         try:
             while True:
                 msg = queue.get(timeout=30)
-                unreal.log(f"Generator got: {msg}")  # ← Add this
+                unreal.log(f"Generator got: {msg}")  
                 if msg is None:
                     break
                 yield f'data: {json.dumps(msg)}\n\n'
         except Exception as e:
-            unreal.log(f"Generator error: {e}")  # ← Add this
+            unreal.log(f"Generator error: {e}") 
         finally:
             code_outputs.pop(request_id, None)
-            unreal.log(f"Generator finished")  # ← Add this
+            unreal.log(f"Generator finished")  
     
     return Response(
         generate(), 
@@ -306,9 +306,6 @@ def execute():
         }
     )
 
-
-load_tools(os.path.join(os.path.dirname(__file__), "default_tools"))  # Plugin tools
-load_tools(os.path.join(unreal.Paths.project_content_dir(), "Python", "tools"))  # User tools
 
 ####################################
 # Register/Unregister Tick Callback 
@@ -332,6 +329,15 @@ def register_callback():
     """ Setup the Sandbox server """
     try:
         cleanup()
+
+        # 1. Reset the Registry so we don't have stale tools
+        TOOLS.clear()
+        TOOL_SCHEMAS.clear()
+        
+        # 2. Re-Load the Tools from disk (This picks up updates!)
+        unreal.log('--- Reloading Tools ---')
+        load_tools(os.path.join(os.path.dirname(__file__), "default_tools"))
+        load_tools(os.path.join(unreal.Paths.project_content_dir(), "Python", "tools"))
 
         # Register Tick
         unreal._ipy_hnd = unreal.register_slate_pre_tick_callback(tick_executor)
