@@ -81,10 +81,7 @@ Navigate directly to a notebook URL: `http://localhost:5001/notebook/NotebookNam
 
 - Click the notebook title in the left sidebar
 - Enter a new name
-
-Notes:
-- Future autosaves will go to the new name
-- The original notebook file is not deleted
+- Future autosaves will go to the new name ( original notebook file is not deleted )
 
 # Managing Cells
 
