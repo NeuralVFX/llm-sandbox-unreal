@@ -15,25 +15,11 @@ An Unreal Engine plugin that exposes a Python execution server, enabling:
 - LLM-assisted code review with full context of your code and errors
 - Creation and deployment of agentic tools that operate inside the engine
 
+## Documentation
 
----
-
-## 🚀 Get Started
-
-👉 **[Setup & Start the System](SETUP.md)**  
-👉 **[How to Use the Notebook](docs/USAGE.md)**  
-👉 **[Register Agentic Tools](docs/TOOLS.md)**
-
----
-
-## What can you do with it?
-
-- Execute Python code directly inside Unreal
-- Use an LLM with full code + error context
-- Let LLMs invoke Unreal tools
-- Register your own agentic tools
-
----
+**[Setup](SETUP.md)**  
+**[Notebook Usage](docs/USAGE.md)**  
+**[Agent Customization](docs/TOOLS.md)**
 
 ## Requirements
 
