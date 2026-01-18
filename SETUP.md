@@ -8,7 +8,7 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 
 2. Open Unreal Engine (or restart)
 
-3. Open **Edit → Plugins** and enable:
+3. Open `Edit → Plugins` and enable:
    - **Python Editor Script Plugin**
    - **Python Foundation Packages**
    - **LLM Sandbox**
