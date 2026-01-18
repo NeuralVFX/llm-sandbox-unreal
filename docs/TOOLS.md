@@ -12,7 +12,7 @@ Tools can be registered by either adding a file to a search directory, or runnin
 - Tools registered in `Code Cells` are instantly availible to the LLM
 - This will last until you restart the server
 - This is the best way to test/prototype a tool, before making it permanent
-- 
+  
 ![toll registraion](../assets/tool_register.gif)
 
 ## Syntax to Register
