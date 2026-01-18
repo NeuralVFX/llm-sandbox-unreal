@@ -3,6 +3,12 @@
 Tools can be registered by either adding a file to a search directory, or running commands in a code cell.
 - Both require the `@register_tool` decorator for the LLM to see them
 
+# How to use Agentic tools:
+- Open a `Prompt Cell`,
+- Click the 🛠️ icon to activate Unreal tools
+- Write a prompt, and execute!
+
+# Adding Agentic tools
 ## Search Dir
 - Put a python file containing your tools inside `PluginDir/Content/Python/default_tools` or `ProjectDir/Content/Python/tools`
 - This is like a permanant tool
@@ -44,9 +50,6 @@ def delete_actors(
     # Your implementation here
     pass
 ```
-
-## To use:
-- Open a `Prompt Cell`, Click the 🛠️ icon to activate Unreal tools, and write a prompt!
 
 ## View the tool Schema
 Schemas are stored in a global variable `TOOL_SCHEMAS`, printing it should show something like:
