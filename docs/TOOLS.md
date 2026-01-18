@@ -29,7 +29,13 @@ Tools can be registered either dynamically at runtime or permanently via a searc
   
 ![tool registraion](../assets/tool_register.gif)
 
-## Syntax to Register
+## Tool Registration
+
+Tool registration defines the callable interface exposed to the LLM.
+
+- The parameters are automatically parsed
+- Doc strings are automatically picked up
+- Notes on the same line as a paramater declaration are automatically picked up
 
 #### Simple Tool:
 ```python
@@ -45,7 +51,16 @@ def spawn_cube(
     pass
 ```
 
-#### Tool with specific Schema overrides: 
+#### Tool with specific Schema overrides
+Schema patches allow you to apply additional constraints to tool parameters.
+
+This is analogous to validating function arguments:
+- Enforcing non-empty arrays
+- Restricting value ranges
+- Narrowing accepted input shapes
+
+These constraints guide the LLM toward valid calls and prevent malformed requests.
+
 ```python
 # Tool with schema patch - enforces array constraints
 ACTOR_PATHS_PATCH = {'type': 'array', 'items': {'type': 'string'}, 'minItems': 1}
