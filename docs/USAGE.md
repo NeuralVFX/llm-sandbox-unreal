@@ -5,7 +5,7 @@
 
 ---
 
-## Notebook Overview
+# Notebook Overview
 
 The web interface provides a Jupyter-style notebook with three cell types:
 
@@ -17,7 +17,7 @@ Notebooks use the standard `.ipynb` format and are compatible with Jupyter.
 
 ---
 
-## Opening, Saving, and Renaming Notebooks
+# Opening, Saving, and Renaming Notebooks
 
 ### Opening a Notebook
 
@@ -41,7 +41,7 @@ Notes:
 
 ---
 
-## Managing Cells
+# Managing Cells
 
 ### Adding a Cell
 
@@ -60,7 +60,7 @@ Each cell includes controls in its upper-right corner:
 
 ---
 
-## Cell Types
+# Cell Types
 
 ---
 
