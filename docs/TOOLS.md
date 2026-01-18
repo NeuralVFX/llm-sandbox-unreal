@@ -25,8 +25,6 @@ Tools can be registered either dynamically at runtime or permanently via a searc
 
 ## Tool Registration
 
-
-
 ### Simple Tool:
 Tool registration defines the callable interface exposed to the LLM.
 
