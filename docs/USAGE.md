@@ -12,7 +12,7 @@ Notebooks use the standard `.ipynb` format and are compatible with Jupyter.
 # Cell Types
 
 ## Code Cell
-![Code cell](../assets/code_cell.jpg)
+![Code cell](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets/code_cell.jpg)
 
 Runs Python code directly inside the Unreal Engine Python kernel.
 
