@@ -14,7 +14,7 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
    - **LLM Sandbox**
      
 ![unreal plugin](assets/unreal_plugin.jpg)
-![other plugins](assets/other_plugins.jpg)
+![other plugins](assets/extra_plugins.jpg)
 
 
 4. Restart Unreal Engine
