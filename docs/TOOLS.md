@@ -21,7 +21,7 @@ Tools can be registered either dynamically at runtime or permanently via a searc
 - This is the recommended way to prototype and test tools before making them permanent
 
   
-![tool registraion](../assets/tool_register.gif)
+![tool registraion](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets//tool_register.gif)
 
 ## Tool Registration
 
