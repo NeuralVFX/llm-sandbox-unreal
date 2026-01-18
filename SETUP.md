@@ -1,4 +1,4 @@
-# LLM Sandbox Unreal — Setup
+# LLM Sandbox Unreal - Setup
 
 Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 
