@@ -32,6 +32,7 @@ Runs Python code directly inside the Unreal Engine Python kernel.
 
 ## Prompt Cell
 ![Prompt cell](../assets/prompt_cell.jpg)
+
 Sends a prompt to an LLM.
 
 **Context**
