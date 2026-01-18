@@ -22,9 +22,9 @@ Runs Python code directly inside the Unreal Engine Python kernel.
 - `print()` output and errors appear at the bottom of the cell
 
 **Controls**
-- ▶ — Run the cell
-- ⏹ — Interrupt execution
-- 🧹 — Clear output
+- ▶ - Run the cell
+- ⏹ - Interrupt execution
+- 🧹 - Clear output
 
 ## Prompt Cell
 ![Prompt cell](../assets/prompt_cell.jpg)
@@ -37,11 +37,11 @@ Sends a prompt to an LLM.
   *(especially useful for debugging)*
 
 **Controls**
-- ▶ — Send the prompt
-- ⏹ — Interrupt LLM output
-- 🧹 — Clear output
-- 📝 — Toggle edit vs rendered Markdown
-- 🛠 — Toggle Unreal tool usage
+- ▶ - Send the prompt
+- ⏹ - Interrupt LLM output
+- 🧹 - Clear output
+- 📝 - Toggle edit vs rendered Markdown
+- 🛠 - Toggle Unreal tool usage
 
 ⚠️**Unreal Tool Usage**⚠️
 - 🛠 must be enabled for the LLM to see the Unreal tools
