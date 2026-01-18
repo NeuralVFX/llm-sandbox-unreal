@@ -48,7 +48,7 @@ Sends a prompt to an LLM.
 - 📝  **Paper / Pencil** — Toggle edit vs rendered Markdown
 - 🛠 **Hammer / Wrench** — Toggle Unreal tool usage
 
-**Tool Usage**
+⚠️**Unreal Tool Usage**⚠️
 - **Enabled**: LLM may invoke Unreal tools
 - **Disabled**: LLM focuses on explanation and code generation only
 
