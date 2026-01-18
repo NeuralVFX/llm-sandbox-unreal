@@ -29,7 +29,7 @@ Tools can be registered either dynamically at runtime or permanently via a searc
 Tool registration defines the callable interface exposed to the LLM.
 
 - The parameters are automatically parsed
-- Doc strings are automatically picked up
+- Docstrings are automatically picked up
 - Notes on the same line as a parameter declaration are automatically picked up
   
 ```python
