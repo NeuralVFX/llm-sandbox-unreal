@@ -93,5 +93,5 @@ Use the **➕ Buttons** in the upper-right of the notebook:
 
 - ▼ - Minimize / Maximize
 - ⬆⬇ - Move Up / Move Down
-- ❌ - Delete**
+- ❌ - Delete
 
