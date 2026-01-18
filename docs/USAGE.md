@@ -22,9 +22,9 @@ Runs Python code directly inside the Unreal Engine Python kernel.
 - `print()` output and errors appear at the bottom of the cell
 
 **Controls**
-- ▶ **Play** — Run the cell
-- ⏹ **Stop** — Interrupt execution
-- 🧹 **Sweep** — Clear output
+- ▶ — Run the cell
+- ⏹ — Interrupt execution
+- 🧹 — Clear output
 
 ## Prompt Cell
 ![Prompt cell](../assets/prompt_cell.jpg)
@@ -37,11 +37,11 @@ Sends a prompt to an LLM.
   *(especially useful for debugging)*
 
 **Controls**
-- ▶ **Play** — Send the prompt
-- ⏹ **Stop** — Interrupt LLM output
-- 🧹 **Sweep** — Clear output
-- 📝  **Paper / Pencil** — Toggle edit vs rendered Markdown
-- 🛠 **Hammer / Wrench** — Toggle Unreal tool usage
+- ▶ — Send the prompt
+- ⏹ — Interrupt LLM output
+- 🧹 — Clear output
+- 📝 — Toggle edit vs rendered Markdown
+- 🛠 — Toggle Unreal tool usage
 
 ⚠️**Unreal Tool Usage**⚠️
 - 🛠 must be enabled for the LLM to see the Unreal tools
@@ -56,7 +56,7 @@ Used for notes and documentation.
 - Displays rendered Markdown when not editing
 
 **Controls**
-- 📝  **Paper / Pencil** — Toggle edit vs rendered Markdown
+- 📝 — Toggle edit vs rendered Markdown
 
 
 # Opening, Saving, and Renaming Notebooks
@@ -91,7 +91,7 @@ Use the **➕ Buttons** in the upper-right of the notebook:
 ### Organizing Cells
 ![Notebook](../assets/right_buttons.jpg)
 
-- ▼ **Minimize / Maximize**
-- ⬆⬇ **Move Up / Move Down**
-- ❌ **Delete**
+- ▼ - Minimize / Maximize
+- ⬆⬇ - Move Up / Move Down
+- ❌ - Delete**
 
