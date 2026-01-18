@@ -1,6 +1,4 @@
 # LLM Sandbox — Usage
-
-# Notebook Overview
 ![Notebook](../assets/notebook.jpg)
 
 The web interface provides a Jupyter-style notebook with three cell types:
