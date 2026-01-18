@@ -5,7 +5,7 @@
 </p>
 LLM Sandbox (Unreal) is an Unreal Engine plugin that runs a local Python execution server inside the editor, allowing external tools and LLMs to inspect and manipulate Unreal scenes in real time.
 
-### The Whole Package
+## The Whole Package
 LLM Sandbox is a two-part system that links a web-based notebook interface with Unreal Engine,
 allowing Python code and LLMs to interact directly with the editor and scene.
 
