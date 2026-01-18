@@ -49,8 +49,8 @@ Sends a prompt to an LLM.
 - 🛠 **Hammer / Wrench** — Toggle Unreal tool usage
 
 ⚠️**Unreal Tool Usage**⚠️
-- **Enabled**: LLM may invoke Unreal tools
-- **Disabled**: LLM focuses on explanation and code generation only
+- 🛠 must be enabled for the LLM to see the Unreal tools
+- Otherwise it can use generic web-search tools only
 
 ## Markdown Cell
 ![Markdown cell](../assets/markdown_cell.jpg)
