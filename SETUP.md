@@ -15,7 +15,7 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 
 4. Restart Unreal Engine
 
-5. From the **LLM Sandbox Tools** menu, click **Install Dependencies**
+5. Find the new menu `LLM Sandbox Tools`, click: `LLM Sandbox Tools -> Install Dependencies`
    - Installs required Python packages into the project:
      - `flask`
      - `ipython`
@@ -24,7 +24,10 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 6. Restart Unreal Engine
 
 ## Usage
- In the **LLM Sandbox Tools** menu, click **Start Server**
+ 1. In unreal click `LLM Sandbox Tools -> Start Server`
+ 2. Follow instruction at [LLM Sandbox Web Interface](https://github.com/NeuralVFX/llm-sandbox-ui) to start Web Interface
+ 3. Check [Usage](usage.md) for notebook usage directions
+
 
 
 ## Requirements
