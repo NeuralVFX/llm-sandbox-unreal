@@ -26,7 +26,7 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 ## Usage
  1. In unreal click `LLM Sandbox Tools -> Start Server`
  2. Follow instruction at [LLM Sandbox Web Interface](https://github.com/NeuralVFX/llm-sandbox-ui) to start Web Interface
- 3. Check [Usage](usage.md) for notebook usage directions
+ 3. Check [USAGE](docs/USAGE.md) for notebook usage directions
 
 
 
