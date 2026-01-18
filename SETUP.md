@@ -23,6 +23,10 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 
 6. Restart Unreal Engine
 
+## Usage
+ In the **LLM Sandbox Tools** menu, click **Start Server**
+
+
 ## Requirements
 
 - Unreal Engine 5.6
