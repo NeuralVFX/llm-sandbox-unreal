@@ -17,8 +17,8 @@ Together, the components enable:
 ## Documentation
 
 - **[Setup](SETUP.md)** - Install / Initialize (Web UI Specific Instructions)
-- **[Notebook Usage](docs/USAGE.md)** - Work with notebooks and cell types
-- **[Agent Customization](docs/TOOLS.md)** - Register and extend agentic tools
+- **[Notebook Usage](https://github.com/NeuralVFX/llm-sandbox-ui/blob/main/docs/USAGE.md)** - Work with notebooks and cell types
+- **[Agent Customization](https://github.com/NeuralVFX/llm-sandbox-ui/blob/main/docs/TOOLS.md)** - Register and extend agentic tools
 
 ## Requirements
 - Unreal Engine 5.6
