@@ -1,7 +1,17 @@
-# LLM Sandbox — Custom Agentic Tools
+# LLM Sandbox - Custom Agentic Tools
 
-Tools can be registered by either adding a file to a search directory, or running commands in a code cell. - Both require the @register_tool decorator for the LLM to see them ## Search Dir - Put a python file containing your tools inside PluginDir/Content/Python/default_tools or ProjectDir/Content/Python/tools - This is like a permanant tool ## Code Cell - Execute the function directly in a Code Cell - Tools registered in Code Cells are instantly availible to the LLM - This will last until you restart the server - This is the best way to test/prototype a tool, before making it permanent
----
+Tools can be registered by either adding a file to a search directory, or running commands in a code cell.
+- Both require the `@register_tool` decorator for the LLM to see them
+
+## Search Dir
+- Put a python file containing your tools inside `PluginDir/Content/Python/default_tools` or `ProjectDir/Content/Python/tools`
+- This is like a permanant tool
+
+## Code Cell
+- Execute the function directly in a `Code Cell`
+- Tools registered in `Code Cells` are instantly availible to the LLM
+- This will last until you restart the server
+- This is the best way to test/prototype a tool, before making it permanent
 
 ## Syntax to Register
 
