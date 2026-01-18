@@ -4,6 +4,10 @@
   <img src="assets/demo.gif" alt="Demo">
 </p>
 
+
+LLM Sandbox is a two-part system that links a web-based notebook interface with Unreal Engine,
+allowing Python code and LLMs to interact directly with the editor and scene.
+
 #### This project has two components:
 - Web-Interface: [llm-sandbox-ui](https://github.com/NeuralVFX/llm-sandbox-ui)  
 - Unreal Plugin: [llm-sandbox-unreal](https://github.com/NeuralVFX/llm-sandbox-unreal)  <--- You are here
