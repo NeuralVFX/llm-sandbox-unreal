@@ -4,7 +4,7 @@ Tools can be registered by either adding a file to a search directory, or runnin
 - Both require the `@register_tool` decorator for the LLM to see them
 
 # How to use Agentic tools:
-- Open a `Prompt Cell`,
+- Open a `Prompt Cell`
 - Click the 🛠️ icon to activate Unreal tools
 - Write a prompt, and execute!
 
