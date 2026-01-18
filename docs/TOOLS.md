@@ -1,17 +1,38 @@
-# LLM Sandbox - Custom Agentic Tools
+# LLM Sandbox — Custom Agentic Tools
 
-Tools can be registered by either adding a file to a search directory, or running commands in a code cell.
-- Both require the `@register_tool` decorator for the LLM to see them
+This document explains how to register custom tools that an LLM can invoke inside Unreal Engine.
 
-## Search Dir
-- Put a python file containing your tools inside `PluginDir/Content/Python/default_tools` or `ProjectDir/Content/Python/tools`
-- This is like a permanant tool
+Tools can be registered in two ways:
+- By placing Python files in a discovery directory (persistent tools)
+- By registering tools dynamically from a notebook code cell (temporary tools)
 
-## Code Cell
-- Execute the function directly in a `Code Cell`
-- Tools registered in `Code Cells` are instantly availible to the LLM
-- This will last until you restart the server
-- This is the best way to test/prototype a tool, before making it permanent
+In both cases, the `@register_tool` decorator is required for the LLM to see the tool.
+
+---
+
+## Registering Tools via Search Directories (Persistent)
+
+Place a Python file containing your tools in one of the following locations:
+
+- `PluginDir/Content/Python/default_tools`
+- `ProjectDir/Content/Python/tools`
+
+Tools in these directories:
+- Are discovered when the Unreal server starts
+- Persist across sessions
+- Are suitable for production or shared tools
+
+---
+
+## Registering Tools from a Code Cell (Temporary)
+
+Tools can also be registered by executing code in a **Code Cell**.
+
+- Tools become available to the LLM immediately
+- Registration lasts until the Unreal server is restarted
+- This is the recommended way to prototype and test tools
+
+---
 
 ## Syntax to Register
 
