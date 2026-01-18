@@ -1,72 +1,113 @@
-# LLM Sandbox - Usage
+# LLM Sandbox — Usage
 
-## Running Both Servers
-Both  the Unreal Server and the Web UI must be running to use this:
-### Unreal Side
-From the menu bar:
-`LLM Sandbox → Start Server`
-- The server runs at `http://127.0.0.1:5002`
-  
-### Web Interface Side
-- Start `llm-sandbox` from command line ( outside of Unreal )
-- Open `http://localhost:5001/notebook/notebook.ipynb` ( or any `ipynb` name )
+> This document assumes both the Unreal server and Web UI are already running.  
+> See `SETUP.md` if you have not started the system yet.
 
-## Overall Notebook Functionality
+---
 
-The web app provides:
-- **Notebook Interface** - Jupyter-style interface
-- `Code Cells` - Write and executing Python code in Unreal
-- `Markdown Cells` - Write notes in Markdown
-- `Prompt Cells` - Chat with LLMs that have full context of your notebook + agentic control of Unreal
+## Notebook Overview
 
-### Saving/Loading
-To navigate to a notebook, put `http://localhost:5001/notebook/NotebookName.ipynb` in the browser
+The web interface provides a Jupyter-style notebook with three cell types:
+
+- **Code Cells** — Execute Python directly inside Unreal Engine
+- **Prompt Cells** — Send prompts to an LLM with full notebook context
+- **Markdown Cells** — Write notes using Markdown
+
+Notebooks use the standard `.ipynb` format and are compatible with Jupyter.
+
+---
+
+## Opening, Saving, and Renaming Notebooks
+
+### Opening a Notebook
+
+Navigate directly to a notebook URL: `http://localhost:5001/notebook/NotebookName.ipynb` 
 - If the notebook exists, it will be opened
-- If not it will be added
-- The notebook is autosaved, every 5 seconds!
+- If it does not exist, a new notebook will be created
 
-### Renaming 
-This functionality is simpler at the momment: If you click on the title on the left, you can change the notebook name.
-- This will cause all future automatic saves to be directed to the new name
-- This does not delete the original notebook 
+### Autosave
 
-### Add Cell
-Click one of the + buttons in the upper right of the notebook:
-- A notebook of that type will be added at the bottom of the page
-- TODO: Checkbox to add under highltighted cell
+- Notebooks autosave every **5 seconds**
+- No manual save is required
 
-### Re-organize Notebook
-Each cell has same buttons in its upper right:
-- Minimize/Maximize
-- Move Up/Move Down
+### Renaming a Notebook
+
+- Click the notebook title in the left sidebar
+- Enter a new name
+
+Notes:
+- Future autosaves will go to the new name
+- The original notebook file is not deleted
+
+---
+
+## Managing Cells
+
+### Adding a Cell
+
+Use the **+ buttons** in the upper-right of the notebook:
+
+- The new cell is added to the bottom of the notebook
+- *(Future)* Option to insert below the currently selected cell
+
+### Reordering and Deleting Cells
+
+Each cell includes controls in its upper-right corner:
+
+- Minimize / Maximize
+- Move Up / Move Down
 - Delete
+
+---
 
 ## Cell Types
 
+---
+
 ### Code Cell
-This cell stores and runs code, directly in the Unreal Engine Kernel
-- Variables are stored between cells
-- You can register new tools using the `@register_tool` here
-- Any print statements or error output are displayed in the bottom of the cell
-Buttons:
-- Play: Runs code
-- Stop: Interrupts running code
-- Sweep: Clears output
+
+Runs Python code directly inside the Unreal Engine Python kernel.
+
+**Behavior**
+- Variables persist across cells
+- Tools can be registered using `@register_tool`
+- `print()` output and errors appear at the bottom of the cell
+
+**Controls**
+- ▶ **Play** — Run the cell
+- ⏹ **Stop** — Interrupt execution
+- 🧹 **Sweep** — Clear output
+
+---
 
 ### Prompt Cell
-This cell sends a prompt to an LLM
-- All of the notebook above the cell, will be visible to the LLM
-    - This includes code output and errors ( wonderfull for debugging )
-Buttons:
-- Play: Runs code
-- Stop: Interrupts LLM output
-- Sweep: Clears output
-- Paper/Pencil: Toggles input between edit mode, and markdown mode
-- Hammer/Wrench: Toggles Unreal tool usage
-  - If Hammer/Wrench is toggled, the Unreal tools are a available, and its encouraged to use them
-  - Otherwise its encouraged to help generate code examples, and can only use web searching tools
+
+Sends a prompt to an LLM.
+
+**Context**
+- The LLM sees all cells *above* the prompt cell
+- Includes code, output, and error messages  
+  *(especially useful for debugging)*
+
+**Controls**
+- ▶ **Play** — Send the prompt
+- ⏹ **Stop** — Interrupt LLM output
+- 🧹 **Sweep** — Clear output
+- ✏️ **Paper / Pencil** — Toggle edit vs rendered Markdown
+- 🛠 **Hammer / Wrench** — Toggle Unreal tool usage
+
+**Tool Usage**
+- **Enabled**: LLM may invoke Unreal tools
+- **Disabled**: LLM focuses on explanation and code generation only
+
+---
 
 ### Markdown Cell
-This cell is for notes, which are displayed in Markdown when not editing
-Buttons:
-- Paper/Pencil: Toggles input between edit mode, and markdown mode
+
+Used for notes and documentation.
+
+**Behavior**
+- Displays rendered Markdown when not editing
+
+**Controls**
+- ✏️ **Paper / Pencil** — Toggle edit vs rendered Markdown
