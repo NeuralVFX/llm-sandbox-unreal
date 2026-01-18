@@ -30,7 +30,7 @@ Tool registration defines the callable interface exposed to the LLM.
 
 - The parameters are automatically parsed
 - Doc strings are automatically picked up
-- Notes on the same line as a paramater declaration are automatically picked up
+- Notes on the same line as a parameter declaration are automatically picked up
   
 ```python
 # Simple tool - no patches needed
@@ -72,7 +72,7 @@ def delete_actors(
 All registered tools are converted into JSON schemas and stored in the global `TOOL_SCHEMAS` variable.
 
 Inspecting this output is useful for:
-- Debugging tool registration
+- Debugging tool registration 
 - Verifying parameter constraints
 - Understanding how the LLM perceives the tool interface
   
