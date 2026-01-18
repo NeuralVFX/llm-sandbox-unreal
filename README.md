@@ -8,13 +8,13 @@
 - Web-Interface: [llm-sandbox-ui](https://github.com/NeuralVFX/llm-sandbox-ui)  
 - Unreal Plugin: [llm-sandbox-unreal](https://github.com/NeuralVFX/llm-sandbox-unreal)  <--- You are here
   
-# What is this?
+LLM Sandbox is a two-part system that connects a web-based notebook interface with Unreal Engine.
 
-An Unreal Engine plugin that exposes a Python execution server, enabling:
-- A web-based coding interface connected directly to Unreal
-- LLM-assisted code review with full context of your code and errors
-- Creation and deployment of agentic tools that operate inside the engine
-
+Together, the components enable:
+- Executing Python code inside Unreal Engine from a web interface
+- LLM-assisted interaction with full visibility into code, output, and errors
+- Creation and execution of agentic tools that operate directly on Unreal scenes
+  
 ## Documentation
 
 **[Setup](SETUP.md)**  
