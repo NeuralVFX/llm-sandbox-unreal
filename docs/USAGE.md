@@ -96,13 +96,8 @@ Use the **+ buttons** in the upper-right of the notebook:
 ### Organizing Cells
 ![Notebook](../assets/right_buttons.jpg)
 
-Each cell includes controls in its upper-right corner:
-⬇ Minimize
-
-⬆⬇ Move Up / Move Down
-
 Delete
-- ▼ Minimize / Maximize
-- ⬆⬇ Move Up / Move Down
-- ❌ Delete
+- ▼ **Minimize / Maximize**
+- ⬆⬇ **Move Up / Move Down**
+- ❌ **Delete**
 
