@@ -19,9 +19,9 @@ Together, the components enable:
   
 ## Documentation
 
-**[Setup](SETUP.md)**  
-**[Notebook Usage](docs/USAGE.md)**  
-**[Agent Customization](docs/TOOLS.md)**
+- **[Setup](SETUP.md)** — Install and start the system
+- **[Notebook Usage](docs/USAGE.md)** — Work with notebooks and cell types
+- **[Agent Customization](docs/TOOLS.md)** — Register and extend agentic tools
 
 ## Requirements
 
