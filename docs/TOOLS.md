@@ -31,13 +31,15 @@ Tools can be registered either dynamically at runtime or permanently via a searc
 
 ## Tool Registration
 
+
+
+### Simple Tool:
 Tool registration defines the callable interface exposed to the LLM.
 
 - The parameters are automatically parsed
 - Doc strings are automatically picked up
 - Notes on the same line as a paramater declaration are automatically picked up
-
-#### Simple Tool:
+  
 ```python
 # Simple tool - no patches needed
 @register_tool
@@ -51,7 +53,7 @@ def spawn_cube(
     pass
 ```
 
-#### Tool with specific Schema overrides
+### Tool with specific Schema overrides
 Schema patches allow you to apply additional constraints to tool parameters.
 
 This is analogous to validating function arguments:
@@ -74,8 +76,14 @@ def delete_actors(
     pass
 ```
 
-## View the tool Schema
-Schemas are stored in a global variable `TOOL_SCHEMAS`, printing it should show something like:
+## Tool Schema
+All registered tools are converted into JSON schemas and stored in the global `TOOL_SCHEMAS` variable.
+
+Inspecting this output is useful for:
+- Debugging tool registration
+- Verifying parameter constraints
+- Understanding how the LLM perceives the tool interface
+  
 ```python
 [{'type': 'function',
   'function': {'name': 'move_actor_until_hit',
