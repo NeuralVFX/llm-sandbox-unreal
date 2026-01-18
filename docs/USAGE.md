@@ -81,7 +81,7 @@ Sends a prompt to an LLM.
 - ▶ **Play** — Send the prompt
 - ⏹ **Stop** — Interrupt LLM output
 - 🧹 **Sweep** — Clear output
-- ✏️ **Paper / Pencil** — Toggle edit vs rendered Markdown
+- 📝  **Paper / Pencil** — Toggle edit vs rendered Markdown
 - 🛠 **Hammer / Wrench** — Toggle Unreal tool usage
 
 **Tool Usage**
@@ -96,4 +96,4 @@ Used for notes and documentation.
 - Displays rendered Markdown when not editing
 
 **Controls**
-- ✏️ **Paper / Pencil** — Toggle edit vs rendered Markdown
+- 📝  **Paper / Pencil** — Toggle edit vs rendered Markdown
