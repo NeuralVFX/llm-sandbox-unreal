@@ -6,8 +6,8 @@
 LLM Sandbox (Unreal) is an Unreal Engine plugin that runs a local Python execution server inside the editor, allowing external tools and LLMs to inspect and manipulate Unreal scenes in real time.
 
 ## The Whole Package
-- Web-Interface: [llm-sandbox-ui](https://github.com/NeuralVFX/llm-sandbox-ui)   <--- You are here
-- Unreal Plugin: [llm-sandbox-unreal](https://github.com/NeuralVFX/llm-sandbox-unreal)
+- Web-Interface: [llm-sandbox-ui](https://github.com/NeuralVFX/llm-sandbox-ui)
+- Unreal Plugin: [llm-sandbox-unreal](https://github.com/NeuralVFX/llm-sandbox-unreal)   <--- You are here
   
 Together, the components enable:
 - Executing Python code inside Unreal Engine from a web interface
