@@ -16,7 +16,7 @@ Together, the components enable:
 
 ## Documentation
 
-- **[Setup](SETUP.md)** - Install / Initialize (Unreal Specific Instructions)
+- **[Setup](SETUP.md)** - Install / Initialize (Web UI Specific Instructions)
 - **[Notebook Usage](docs/USAGE.md)** - Work with notebooks and cell types
 - **[Agent Customization](docs/TOOLS.md)** - Register and extend agentic tools
 
