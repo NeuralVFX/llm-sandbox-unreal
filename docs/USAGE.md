@@ -83,7 +83,7 @@ Navigate directly to a notebook URL: `http://localhost:5001/notebook/NotebookNam
 ### Adding a Cell
 ![Notebook](../assets/add_cell.jpg)
 
-Use the **+ buttons** in the upper-right of the notebook:
+Use the **➕ Buttons** in the upper-right of the notebook:
 
 - The new cell is added to the bottom of the notebook
 - *(Future)* Option to insert below the currently selected cell
@@ -91,7 +91,6 @@ Use the **+ buttons** in the upper-right of the notebook:
 ### Organizing Cells
 ![Notebook](../assets/right_buttons.jpg)
 
-Delete
 - ▼ **Minimize / Maximize**
 - ⬆⬇ **Move Up / Move Down**
 - ❌ **Delete**
