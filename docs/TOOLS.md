@@ -60,6 +60,5 @@ Schemas are stored in a global variable `TOOL_SCHEMAS`, printing it should show 
      'distance': {'type': 'number', 'description': '', 'default': 10000},
      'buffer_distance': {'type': 'number',
       'description': '',
-...
 ```
 
