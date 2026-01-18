@@ -4,7 +4,7 @@
 Agentic tools allow the LLM to actively manipulate the Unreal scene.
 Tools can be registered either dynamically at runtime or permanently via a search directory.
 
-## Adding Agentic tools
+# Adding Agentic tools
 ### Search Directory (Permanent Tools)
 
 - Put a Python file containing your tools inside:
@@ -23,9 +23,9 @@ Tools can be registered either dynamically at runtime or permanently via a searc
   
 ![tool registraion](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets//tool_register.gif)
 
-## Tool Registration
+# Tool Registration
 
-### Simple Tool:
+## Simple Tool:
 Tool registration defines the callable interface exposed to the LLM.
 
 - The parameters are automatically parsed
@@ -45,7 +45,7 @@ def spawn_cube(
     pass
 ```
 
-### Tool with specific Schema overrides
+## Tool with specific Schema overrides
 Schema patches allow you to apply additional constraints to tool parameters.
 
 This is analogous to validating function arguments:
@@ -68,7 +68,7 @@ def delete_actors(
     pass
 ```
 
-## Tool Schema
+# Tool Schema
 All registered tools are converted into JSON schemas and stored in the global `TOOL_SCHEMAS` variable.
 
 Inspecting this output is useful for:
