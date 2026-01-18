@@ -1,5 +1,5 @@
 # LLM Sandbox - Usage
-![Notebook](../assets/notebook.jpg)
+![Notebook](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets/notebook.jpg)
 
 The web interface provides a Jupyter-style notebook with three cell types:
 
@@ -27,7 +27,7 @@ Runs Python code directly inside the Unreal Engine Python kernel.
 - 🧹 - Clear output
 
 ## Prompt Cell
-![Prompt cell](../assets/prompt_cell.jpg)
+![Prompt cell](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets/prompt_cell.jpg)
 
 Sends a prompt to an LLM.
 
@@ -48,7 +48,7 @@ Sends a prompt to an LLM.
 - Otherwise it can use generic web-search tools only
 
 ## Markdown Cell
-![Markdown cell](../assets/markdown_cell.jpg)
+![Markdown cell](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets/markdown_cell.jpg)
 
 Used for notes and documentation.
 
@@ -81,7 +81,7 @@ Navigate directly to a notebook URL: `http://localhost:5001/notebook/NotebookNam
 # Managing Cells
 
 ### Adding a Cell
-![Notebook](../assets/add_cell.jpg)
+![Notebook](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets/add_cell.jpg)
 
 Use the **➕ Buttons** in the upper-right of the notebook:
 
@@ -89,7 +89,7 @@ Use the **➕ Buttons** in the upper-right of the notebook:
 - *(Future)* Option to insert below the currently selected cell
 
 ### Organizing Cells
-![Notebook](../assets/right_buttons.jpg)
+![Notebook](https://raw.githubusercontent.com/NeuralVFX/llm-sandbox-unreal/main/assets/right_buttons.jpg)
 
 - ▼ - Minimize / Maximize
 - ⬆⬇ - Move Up / Move Down
