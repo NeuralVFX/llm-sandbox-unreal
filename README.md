@@ -22,9 +22,3 @@ Together, the components enable:
 - **[Setup](SETUP.md)** - Install / Initialize (Unreal Specific Instructions)
 - **[Notebook Usage](docs/USAGE.md)** - Work with notebooks and cell types
 - **[Agent Customization](docs/TOOLS.md)** - Register and extend agentic tools
-
-## Requirements
-
-- Unreal Engine 5.6
-- Python enabled in Unreal
-- LLM Sandbox Web UI
