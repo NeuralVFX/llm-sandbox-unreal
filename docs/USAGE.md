@@ -56,7 +56,7 @@ Used for notes and documentation.
 - Displays rendered Markdown when not editing
 
 **Controls**
-- 📝 — Toggle edit vs rendered Markdown
+- 📝 - Toggle edit vs rendered Markdown
 
 
 # Opening, Saving, and Renaming Notebooks
