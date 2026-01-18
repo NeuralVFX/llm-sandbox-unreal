@@ -4,13 +4,7 @@
 Agentic tools allow the LLM to actively manipulate the Unreal scene.
 Tools can be registered either dynamically at runtime or permanently via a search directory.
 
-## Using Agentic Tools
-
-1. Open a **Prompt Cell**
-2. Click the 🛠️ icon to activate Unreal tools
-3. Write a prompt and execute it
-
-# Adding Agentic tools
+## Adding Agentic tools
 ### Search Directory (Permanent Tools)
 
 - Put a Python file containing your tools inside:
