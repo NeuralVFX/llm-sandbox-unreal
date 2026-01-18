@@ -3,8 +3,6 @@
 > This document assumes both the Unreal server and Web UI are already running.  
 > See `SETUP.md` if you have not started the system yet.
 
----
-
 # Notebook Overview
 
 The web interface provides a Jupyter-style notebook with three cell types:
@@ -14,8 +12,6 @@ The web interface provides a Jupyter-style notebook with three cell types:
 - **Markdown Cells** — Write notes using Markdown
 
 Notebooks use the standard `.ipynb` format and are compatible with Jupyter.
-
----
 
 # Opening, Saving, and Renaming Notebooks
 
@@ -39,8 +35,6 @@ Notes:
 - Future autosaves will go to the new name
 - The original notebook file is not deleted
 
----
-
 # Managing Cells
 
 ### Adding a Cell
@@ -58,11 +52,7 @@ Each cell includes controls in its upper-right corner:
 - Move Up / Move Down
 - Delete
 
----
-
 # Cell Types
-
----
 
 ### Code Cell
 
@@ -77,8 +67,6 @@ Runs Python code directly inside the Unreal Engine Python kernel.
 - ▶ **Play** — Run the cell
 - ⏹ **Stop** — Interrupt execution
 - 🧹 **Sweep** — Clear output
-
----
 
 ### Prompt Cell
 
@@ -99,8 +87,6 @@ Sends a prompt to an LLM.
 **Tool Usage**
 - **Enabled**: LLM may invoke Unreal tools
 - **Disabled**: LLM focuses on explanation and code generation only
-
----
 
 ### Markdown Cell
 
