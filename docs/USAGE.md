@@ -1,8 +1,5 @@
 # LLM Sandbox — Usage
 
-> This document assumes both the Unreal server and Web UI are already running.  
-> See `SETUP.md` if you have not started the system yet.
-
 # Notebook Overview
 ![Notebook](../assets/notebook.jpg)
 
