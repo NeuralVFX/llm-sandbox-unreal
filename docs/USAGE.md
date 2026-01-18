@@ -54,7 +54,7 @@ Each cell includes controls in its upper-right corner:
 
 # Cell Types
 
-### Code Cell
+## Code Cell
 
 Runs Python code directly inside the Unreal Engine Python kernel.
 
@@ -68,7 +68,7 @@ Runs Python code directly inside the Unreal Engine Python kernel.
 - ⏹ **Stop** — Interrupt execution
 - 🧹 **Sweep** — Clear output
 
-### Prompt Cell
+## Prompt Cell
 
 Sends a prompt to an LLM.
 
@@ -88,7 +88,7 @@ Sends a prompt to an LLM.
 - **Enabled**: LLM may invoke Unreal tools
 - **Disabled**: LLM focuses on explanation and code generation only
 
-### Markdown Cell
+## Markdown Cell
 
 Used for notes and documentation.
 
