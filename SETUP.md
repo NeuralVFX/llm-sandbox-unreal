@@ -26,4 +26,4 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 ## Requirements
 
 - Unreal Engine 5.6
-- [**LLM Sandbox Web Interface** ] (https://github.com/NeuralVFX/llm-sandbox-ui)
+- **[LLM Sandbox Web Interface](https://github.com/NeuralVFX/llm-sandbox-ui)** ( installation instruction provided )
