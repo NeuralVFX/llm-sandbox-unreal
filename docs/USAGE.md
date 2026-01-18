@@ -4,6 +4,7 @@
 > See `SETUP.md` if you have not started the system yet.
 
 # Notebook Overview
+![Notebook](../assets/notebook.jpg)
 
 The web interface provides a Jupyter-style notebook with three cell types:
 
@@ -88,6 +89,7 @@ Notes:
 # Managing Cells
 
 ### Adding a Cell
+![Notebook](../assets/add_cell.jpg)
 
 Use the **+ buttons** in the upper-right of the notebook:
 
