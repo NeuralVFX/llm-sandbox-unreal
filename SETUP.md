@@ -21,6 +21,7 @@ Follow these steps to install and initialize the LLM Sandbox Unreal plugin.
 
 5. Find the new menu `LLM Sandbox Tools`, click: `LLM Sandbox Tools -> Install Dependencies`
    - Installs required Python packages into the project:
+     - `fastcore` 
      - `flask`
      - `ipython`
      - `lisette`
