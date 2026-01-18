@@ -96,7 +96,8 @@ Use the **+ buttons** in the upper-right of the notebook:
 - The new cell is added to the bottom of the notebook
 - *(Future)* Option to insert below the currently selected cell
 
-### Reordering and Deleting Cells
+### Organizing Cells
+![Notebook](../assets/right_buttons.jpg)
 
 Each cell includes controls in its upper-right corner:
 
