@@ -13,45 +13,6 @@ The web interface provides a Jupyter-style notebook with three cell types:
 
 Notebooks use the standard `.ipynb` format and are compatible with Jupyter.
 
-# Opening, Saving, and Renaming Notebooks
-
-### Opening a Notebook
-
-Navigate directly to a notebook URL: `http://localhost:5001/notebook/NotebookName.ipynb` 
-- If the notebook exists, it will be opened
-- If it does not exist, a new notebook will be created
-
-### Autosave
-
-- Notebooks autosave every **5 seconds**
-- No manual save is required
-
-### Renaming a Notebook
-
-- Click the notebook title in the left sidebar
-- Enter a new name
-
-Notes:
-- Future autosaves will go to the new name
-- The original notebook file is not deleted
-
-# Managing Cells
-
-### Adding a Cell
-
-Use the **+ buttons** in the upper-right of the notebook:
-
-- The new cell is added to the bottom of the notebook
-- *(Future)* Option to insert below the currently selected cell
-
-### Reordering and Deleting Cells
-
-Each cell includes controls in its upper-right corner:
-
-- Minimize / Maximize
-- Move Up / Move Down
-- Delete
-
 # Cell Types
 
 ## Code Cell
@@ -97,3 +58,44 @@ Used for notes and documentation.
 
 **Controls**
 - 📝  **Paper / Pencil** — Toggle edit vs rendered Markdown
+
+
+# Opening, Saving, and Renaming Notebooks
+
+### Opening a Notebook
+
+Navigate directly to a notebook URL: `http://localhost:5001/notebook/NotebookName.ipynb` 
+- If the notebook exists, it will be opened
+- If it does not exist, a new notebook will be created
+
+### Autosave
+
+- Notebooks autosave every **5 seconds**
+- No manual save is required
+
+### Renaming a Notebook
+
+- Click the notebook title in the left sidebar
+- Enter a new name
+
+Notes:
+- Future autosaves will go to the new name
+- The original notebook file is not deleted
+
+# Managing Cells
+
+### Adding a Cell
+
+Use the **+ buttons** in the upper-right of the notebook:
+
+- The new cell is added to the bottom of the notebook
+- *(Future)* Option to insert below the currently selected cell
+
+### Reordering and Deleting Cells
+
+Each cell includes controls in its upper-right corner:
+
+- Minimize / Maximize
+- Move Up / Move Down
+- Delete
+
