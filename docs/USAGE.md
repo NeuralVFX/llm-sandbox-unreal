@@ -16,6 +16,7 @@ Notebooks use the standard `.ipynb` format and are compatible with Jupyter.
 # Cell Types
 
 ## Code Cell
+![Code cell](../assets/code_cell.jpg)
 
 Runs Python code directly inside the Unreal Engine Python kernel.
 
@@ -30,6 +31,7 @@ Runs Python code directly inside the Unreal Engine Python kernel.
 - 🧹 **Sweep** — Clear output
 
 ## Prompt Cell
+![Prompt cell](../assets/prompt_cell.jpg)
 
 Sends a prompt to an LLM.
 
@@ -50,6 +52,7 @@ Sends a prompt to an LLM.
 - **Disabled**: LLM focuses on explanation and code generation only
 
 ## Markdown Cell
+![Markdown cell](../assets/markdown_cell.jpg)
 
 Used for notes and documentation.
 
