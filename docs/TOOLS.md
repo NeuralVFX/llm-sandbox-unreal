@@ -1,13 +1,14 @@
 # LLM Sandbox - Custom Agentic Tools
 
 
-Tools can be registered by either adding a file to a search directory, or running commands in a code cell.
-- Both require the `@register_tool` decorator for the LLM to see them
+Agentic tools allow the LLM to actively manipulate the Unreal scene.
+Tools can be registered either dynamically at runtime or permanently via a search directory.
 
-# How to use Agentic tools:
-- Open a `Prompt Cell`
-- Click the 🛠️ icon to activate Unreal tools
-- Write a prompt, and execute!
+## Using Agentic Tools
+
+1. Open a **Prompt Cell**
+2. Click the 🛠️ icon to activate Unreal tools
+3. Write a prompt and execute it
 
 # Adding Agentic tools
 ### Search Directory (Permanent Tools)
